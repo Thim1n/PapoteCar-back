@@ -1,0 +1,56 @@
+# =============================================================
+# PapoteCar - Docker Compose
+# Services : MySQL 8.0
+# Usage    : docker compose up -d
+# =============================================================
+
+services:
+
+  # -----------------------------------------------------------
+  # Base de données MySQL
+  # -----------------------------------------------------------
+  papotecar-db:
+    build:
+      context: ./mysql
+      dockerfile: Dockerfile
+    container_name: papotecar-db
+    restart: unless-stopped
+
+    environment:
+      MYSQL_DATABASE:      papotecar
+      MYSQL_USER:          papotecar_user
+      MYSQL_PASSWORD:      papotecar_pass
+      MYSQL_ROOT_PASSWORD: root_secret
+
+    ports:
+      # host:container — change le port hôte si 3306 est déjà utilisé
+      - "3306:3306"
+
+    volumes:
+      # Persistance des données entre les redémarrages
+      - papotecar-db-data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
+             "-u", "papotecar_user", "--password=papotecar_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    networks:
+      - papotecar-network
+
+# -----------------------------------------------------------
+# Volumes nommés
+# -----------------------------------------------------------
+volumes:
+  papotecar-db-data:
+    driver: local
+
+# -----------------------------------------------------------
+# Réseau interne
+# -----------------------------------------------------------
+networks:
+  papotecar-network:
+    driver: bridge
