@@ -1,5 +1,6 @@
 package com.PapoteCar.PapoteCar.controller;
 
+import com.PapoteCar.PapoteCar.dto.TrajetResponse;
 import com.PapoteCar.PapoteCar.dto.UpdateUtilisateurRequest;
 import com.PapoteCar.PapoteCar.dto.UtilisateurResponse;
 import com.PapoteCar.PapoteCar.model.Trajet;
@@ -11,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/user")
@@ -24,6 +27,19 @@ public class UtilisateurController {
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UtilisateurResponse> getMe() {
+        Utilisateur connecte = utilisateurConnecte();
+        return ResponseEntity.ok(new UtilisateurResponse(
+                connecte.getId(),
+                connecte.getNom(),
+                connecte.getPrenom(),
+                connecte.getTel(),
+                connecte.getCreatedAt(),
+                connecte.getEmail()
+        ));
     }
 
     @GetMapping("/{id}")
@@ -46,7 +62,7 @@ public class UtilisateurController {
         ));
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<UtilisateurResponse> updateUtilisateur(
             @PathVariable Integer id,
             @RequestBody UpdateUtilisateurRequest request) {
@@ -70,6 +86,27 @@ public class UtilisateurController {
                 connecte.getCreatedAt(),
                 connecte.getEmail()
         ));
+    }
+
+    @GetMapping("/{id}/trajets")
+    public ResponseEntity<List<TrajetResponse>> getTrajetsUtilisateur(@PathVariable Integer id) {
+        utilisateurRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+
+        List<TrajetResponse> trajets = trajetRepository.findByConducteurId(id).stream()
+                .map(t -> new TrajetResponse(
+                        t.getId(),
+                        t.getDepartVille(),
+                        t.getArriveeVille(),
+                        t.getHoraireDepart(),
+                        t.getHoraireArrivee(),
+                        t.getPlacesDisponibles(),
+                        t.getStatut(),
+                        t.getCreatedAt()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(trajets);
     }
 
     @DeleteMapping("/{id}")
