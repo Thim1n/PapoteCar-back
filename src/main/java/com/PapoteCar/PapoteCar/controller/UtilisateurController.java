@@ -32,13 +32,15 @@ public class UtilisateurController {
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
 
         Utilisateur connecte = utilisateurConnecte();
-        String email = connecte.getId().equals(id) ? cible.getEmail() : null;
+        boolean estProprietaire = connecte.getId().equals(id);
+        String email = estProprietaire ? cible.getEmail() : null;
+        String tel   = estProprietaire ? cible.getTel()   : null;
 
         return ResponseEntity.ok(new UtilisateurResponse(
                 cible.getId(),
                 cible.getNom(),
                 cible.getPrenom(),
-                cible.getTel(),
+                tel,
                 cible.getCreatedAt(),
                 email
         ));
