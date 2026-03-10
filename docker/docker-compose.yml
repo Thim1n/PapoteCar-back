@@ -41,6 +41,27 @@ services:
     networks:
       - papotecar-network
 
+  # -----------------------------------------------------------
+  # Application Spring Boot (Backend)
+  # -----------------------------------------------------------
+  papotecar-back:
+    build:
+      context: ..
+      dockerfile: docker/app/Dockerfile
+    container_name: papotecar-back
+    depends_on:
+      papotecar-db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://papotecar-db:3306/papotecar?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Europe/Paris&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: papotecar_user
+      SPRING_DATASOURCE_PASSWORD: papotecar_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8080:8080"
+    networks:
+      - papotecar-network
+
 # -----------------------------------------------------------
 # Volumes nommés
 # -----------------------------------------------------------
