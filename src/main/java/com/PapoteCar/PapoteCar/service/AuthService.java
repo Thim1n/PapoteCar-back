@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 @Service
@@ -62,8 +63,9 @@ public class AuthService {
         return new AuthResponse(token, expireLabel());
     }
 
-    private String expireLabel() {
-        LocalDate tomorrow = LocalDate.now(ZoneId.of("Europe/Paris")).plusDays(1);
-        return "Minuit le " + tomorrow;
+    private LocalDateTime expireLabel() {
+        return LocalDate.now(ZoneId.of("Europe/Paris"))
+                .plusDays(1)
+                .atStartOfDay();
     }
 }
