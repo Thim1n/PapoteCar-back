@@ -23,6 +23,9 @@ public class Utilisateur implements Serializable {
     @Column(nullable = false, length = 100)
     private String prenom;
 
+    @Column(nullable = false, unique = true, length = 100)
+    private String username;
+
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 

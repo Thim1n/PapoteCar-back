@@ -8,4 +8,5 @@ import java.util.List;
 public interface TrajetRepository extends JpaRepository<Trajet, Integer> {
     boolean existsByConducteurIdAndStatut(Integer conducteurId, Trajet.Statut statut);
     List<Trajet> findByConducteurId(Integer conducteurId);
+    boolean existsByVoitureIdAndStatut(Integer voitureId, Trajet.Statut statut);
 }

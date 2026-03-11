@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 @Service
@@ -25,10 +26,14 @@ public class AuthService {
         if (utilisateurRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email déjà utilisé");
         }
+        if (utilisateurRepository.existsByUsername(request.getUsername())) {
+            throw new IllegalArgumentException("Username déjà utilisé");
+        }
 
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNom(request.getNom());
         utilisateur.setPrenom(request.getPrenom());
+        utilisateur.setUsername(request.getUsername());
         utilisateur.setEmail(request.getEmail());
         utilisateur.setMotDePasse(passwordEncoder.encode(request.getMotDePasse()));
         utilisateur.setTel(request.getTel());
@@ -39,19 +44,28 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        Utilisateur utilisateur = utilisateurRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Email ou mot de passe incorrect"));
+        String login = request.getLogin();
+
+        if (login == null || login.isBlank()) {
+            throw new IllegalArgumentException("Identifiant requis");
+        }
+
+        Utilisateur utilisateur = (login.contains("@")
+                ? utilisateurRepository.findByEmail(login)
+                : utilisateurRepository.findByUsername(login))
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable : " + login));
 
         if (!passwordEncoder.matches(request.getMotDePasse(), utilisateur.getMotDePasse())) {
-            throw new IllegalArgumentException("Email ou mot de passe incorrect");
+            throw new IllegalArgumentException("Mot de passe incorrect pour : " + login);
         }
 
         String token = jwtUtil.generateToken(utilisateur.getEmail());
         return new AuthResponse(token, expireLabel());
     }
 
-    private String expireLabel() {
-        LocalDate tomorrow = LocalDate.now(ZoneId.of("Europe/Paris")).plusDays(1);
-        return "Minuit le " + tomorrow;
+    private LocalDateTime expireLabel() {
+        return LocalDate.now(ZoneId.of("Europe/Paris"))
+                .plusDays(1)
+                .atStartOfDay();
     }
 }

@@ -8,12 +8,12 @@ USE papotecar;
 -- -------------------------------------------------------------
 -- Utilisateurs (5 conducteurs / passagers)
 -- -------------------------------------------------------------
-INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, tel) VALUES
-('Dupont',   'Alice',   'alice.dupont@email.com',   '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0601020304'),
-('Martin',   'Bob',     'bob.martin@email.com',     '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0611223344'),
-('Bernard',  'Camille', 'camille.bernard@email.com','$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0622334455'),
-('Leroy',    'David',   'david.leroy@email.com',    '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0633445566'),
-('Moreau',   'Emma',    'emma.moreau@email.com',    '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0644556677');
+INSERT INTO utilisateurs (nom, prenom, username, email, mot_de_passe, tel) VALUES
+('Dupont',   'Alice',   'alice.d',   'alice.dupont@email.com',   '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0601020304'),
+('Martin',   'Bob',     'bob.m',     'bob.martin@email.com',     '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0611223344'),
+('Bernard',  'Camille', 'camille.b', 'camille.bernard@email.com','$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0622334455'),
+('Leroy',    'David',   'david.l',   'david.leroy@email.com',    '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0633445566'),
+('Moreau',   'Emma',    'emma.m',    'emma.moreau@email.com',    '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0644556677');
 
 -- -------------------------------------------------------------
 -- Voitures
