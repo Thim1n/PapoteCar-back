@@ -27,7 +27,7 @@ public class JwtUtil {
     // ─── Génération ──────────────────────────────────────────────────────────
 
     /**
-     * Génère un token JWT pour l'email donné.
+     * Génère un token JWT pour le login donné.
      * Expiration : minuit du jour courant (Europe/Paris).
      */
     public String generateToken(String email) {
