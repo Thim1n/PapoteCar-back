@@ -18,6 +18,8 @@ FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 EXPOSE 8080
 ENV JAVA_OPTS="-Xms256m -Xmx512m"
+ARG JWT_SECRET
+ENV JWT_SECRET=$JWT_SECRET
 
 # Copy the built jar from the build stage
 COPY --from=build /workspace/target/*.jar app.jar

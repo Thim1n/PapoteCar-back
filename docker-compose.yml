@@ -1,8 +1,7 @@
 # =============================================================
 # PapoteCar — Docker Compose (production)
 # Pull les images depuis GitHub Container Registry
-# Usage : docker compose up -d
-# Prérequis : JWT_SECRET dans l'environnement ou un fichier .env
+# Usage : docker compose pull && docker compose up -d
 # =============================================================
 
 services:
@@ -42,7 +41,6 @@ services:
       SPRING_DATASOURCE_USERNAME: papotecar_user
       SPRING_DATASOURCE_PASSWORD: papotecar_pass
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      JWT_SECRET: ${JWT_SECRET}
     ports:
       - "8080:8080"
     networks:
