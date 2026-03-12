@@ -34,4 +34,16 @@ public interface TrajetRepository extends JpaRepository<Trajet, Integer> {
 
     @Query("SELECT t FROM Trajet t JOIN FETCH t.conducteur JOIN FETCH t.voiture WHERE t.id = :id")
     Optional<Trajet> findByIdWithDetails(@Param("id") Integer id);
+
+    @Query("SELECT t FROM Trajet t JOIN FETCH t.conducteur JOIN FETCH t.voiture " +
+           "WHERE t.statut = com.PapoteCar.PapoteCar.model.Trajet.Statut.actif " +
+           "AND (:dateDebut IS NULL OR t.horaireDepart >= :dateDebut) " +
+           "AND (:dateFin IS NULL OR t.horaireDepart < :dateFin) " +
+           "AND (:placesMin IS NULL OR t.placesDisponibles >= :placesMin) " +
+           "ORDER BY t.horaireDepart ASC")
+    List<Trajet> searchTrajetsActifs(
+            @Param("dateDebut") LocalDateTime dateDebut,
+            @Param("dateFin") LocalDateTime dateFin,
+            @Param("placesMin") Integer placesMin
+    );
 }
