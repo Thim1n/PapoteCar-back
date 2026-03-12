@@ -30,4 +30,5 @@ public class CreateTrajetRequest {
     private LocalDateTime horaireArrivee;
     private Integer tempsTrajetMin;
     private Integer placesDisponibles;
+    private BigDecimal prix;
 }

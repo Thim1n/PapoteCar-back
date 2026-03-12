@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     mot_de_passe VARCHAR(255) NOT NULL,
     tel                VARCHAR(20),
     permis_de_conduire TINYINT(1)   NOT NULL DEFAULT 0,
+    solde              DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     created_at         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -67,6 +68,7 @@ CREATE TABLE IF NOT EXISTS trajets (
     horaire_arrivee       TIMESTAMP       NOT NULL,
     temps_trajet_min      INT,
     places_disponibles    INT             NOT NULL DEFAULT 1,
+    prix                  DECIMAL(6,2)    NOT NULL DEFAULT 0.00,
     statut                ENUM('actif','termine','annule') NOT NULL DEFAULT 'actif',
     created_at            TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

@@ -53,6 +53,7 @@ public class TrajetController {
                         trajet.getHoraireDepart(),
                         trajet.getHoraireArrivee(),
                         trajet.getPlacesDisponibles(),
+                        trajet.getPrix(),
                         trajet.getStatut(),
                         trajet.getCreatedAt()
                 ))
@@ -137,6 +138,7 @@ public class TrajetController {
                         trajet.getHoraireArrivee(),
                         trajet.getTempsTrajetMin(),
                         trajet.getPlacesDisponibles(),
+                        trajet.getPrix(),
                         trajet.getStatut()
                 ))
                 .toList();
@@ -169,6 +171,7 @@ public class TrajetController {
                 trajet.getHoraireArrivee(),
                 trajet.getTempsTrajetMin(),
                 trajet.getPlacesDisponibles(),
+                trajet.getPrix(),
                 trajet.getStatut()
         ));
     }
@@ -229,6 +232,7 @@ public class TrajetController {
         trajet.setHoraireArrivee(horaireArrivee);
         trajet.setTempsTrajetMin(request.getTempsTrajetMin());
         trajet.setPlacesDisponibles(request.getPlacesDisponibles());
+        if (request.getPrix() != null) trajet.setPrix(request.getPrix());
         trajet.setStatut(Trajet.Statut.actif);
         trajet.setCreatedAt(LocalDateTime.now());
 
@@ -254,6 +258,7 @@ public class TrajetController {
                 sauvegarde.getHoraireArrivee(),
                 sauvegarde.getTempsTrajetMin(),
                 sauvegarde.getPlacesDisponibles(),
+                sauvegarde.getPrix(),
                 sauvegarde.getStatut()
         ));
     }
@@ -290,6 +295,7 @@ public class TrajetController {
         if (request.getHoraireArrivee() != null) trajet.setHoraireArrivee(request.getHoraireArrivee());
         if (request.getTempsTrajetMin() != null) trajet.setTempsTrajetMin(request.getTempsTrajetMin());
         if (request.getPlacesDisponibles() != null) trajet.setPlacesDisponibles(request.getPlacesDisponibles());
+        if (request.getPrix() != null) trajet.setPrix(request.getPrix());
 
         if (request.getVoitureId() != null) {
             Voiture voiture = voitureRepository.findById(request.getVoitureId())
@@ -333,6 +339,7 @@ public class TrajetController {
                 sauvegarde.getHoraireArrivee(),
                 sauvegarde.getTempsTrajetMin(),
                 sauvegarde.getPlacesDisponibles(),
+                sauvegarde.getPrix(),
                 sauvegarde.getStatut()
         ));
     }
@@ -403,6 +410,7 @@ public class TrajetController {
                 trajet.getHoraireArrivee(),
                 trajet.getTempsTrajetMin(),
                 trajet.getPlacesDisponibles(),
+                trajet.getPrix(),
                 trajet.getStatut()
         ));
     }

@@ -3,6 +3,7 @@ package com.PapoteCar.PapoteCar.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -15,4 +16,5 @@ public class UtilisateurResponse {
     private LocalDateTime createdAt;
     private String email; // null si profil public (pas son propre profil)
     private boolean permisDeConduire;
+    private BigDecimal solde; // null si profil public
 }

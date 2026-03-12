@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -37,6 +38,9 @@ public class Utilisateur implements Serializable {
 
     @Column(name = "permis_de_conduire", nullable = false)
     private boolean permisDeConduire = false;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal solde = BigDecimal.ZERO;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

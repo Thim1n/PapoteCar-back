@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -40,7 +41,8 @@ public class UtilisateurController {
                 connecte.getTel(),
                 connecte.getCreatedAt(),
                 connecte.getEmail(),
-                connecte.isPermisDeConduire()
+                connecte.isPermisDeConduire(),
+                connecte.getSolde()
         ));
     }
 
@@ -56,7 +58,8 @@ public class UtilisateurController {
                 connecte.getTel(),
                 connecte.getCreatedAt(),
                 connecte.getEmail(),
-                connecte.isPermisDeConduire()
+                connecte.isPermisDeConduire(),
+                connecte.getSolde()
         ));
     }
 
@@ -70,6 +73,7 @@ public class UtilisateurController {
         String email = estProprietaire ? cible.getEmail() : null;
         String tel   = estProprietaire ? cible.getTel()   : null;
 
+        BigDecimal solde = estProprietaire ? cible.getSolde() : null;
         return ResponseEntity.ok(new UtilisateurResponse(
                 cible.getId(),
                 cible.getNom(),
@@ -77,7 +81,8 @@ public class UtilisateurController {
                 tel,
                 cible.getCreatedAt(),
                 email,
-                cible.isPermisDeConduire()
+                cible.isPermisDeConduire(),
+                solde
         ));
     }
 
@@ -104,7 +109,8 @@ public class UtilisateurController {
                 connecte.getTel(),
                 connecte.getCreatedAt(),
                 connecte.getEmail(),
-                connecte.isPermisDeConduire()
+                connecte.isPermisDeConduire(),
+                connecte.getSolde()
         ));
     }
 
@@ -121,6 +127,7 @@ public class UtilisateurController {
                         trajet.getHoraireDepart(),
                         trajet.getHoraireArrivee(),
                         trajet.getPlacesDisponibles(),
+                        trajet.getPrix(),
                         trajet.getStatut(),
                         trajet.getCreatedAt()
                 ))

@@ -151,6 +151,10 @@ public class ReservationController {
             Trajet trajet = reservation.getTrajet();
             trajet.setPlacesDisponibles(trajet.getPlacesDisponibles() + 1);
             trajetRepository.save(trajet);
+
+            Utilisateur passager = reservation.getPassager();
+            passager.setSolde(passager.getSolde().add(trajet.getPrix()));
+            utilisateurRepository.save(passager);
         }
 
         reservation.setStatut(Reservation.Statut.annule);
@@ -180,11 +184,19 @@ public class ReservationController {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
 
+        Utilisateur passager = reservation.getPassager();
+        if (passager.getSolde().compareTo(trajet.getPrix()) < 0) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
         reservation.setStatut(Reservation.Statut.valide);
         reservationRepository.save(reservation);
 
         trajet.setPlacesDisponibles(trajet.getPlacesDisponibles() - 1);
         trajetRepository.save(trajet);
+
+        passager.setSolde(passager.getSolde().subtract(trajet.getPrix()));
+        utilisateurRepository.save(passager);
 
         return ResponseEntity.ok(new ReservationResponse(
                 reservation.getId(),

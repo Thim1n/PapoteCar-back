@@ -70,6 +70,9 @@ public class Trajet implements Serializable {
     @Column(name = "places_disponibles", nullable = false)
     private Integer placesDisponibles;
 
+    @Column(nullable = false, precision = 6, scale = 2)
+    private BigDecimal prix = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Statut statut = Statut.actif;

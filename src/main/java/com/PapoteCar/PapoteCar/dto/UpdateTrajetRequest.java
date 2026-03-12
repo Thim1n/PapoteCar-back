@@ -26,4 +26,5 @@ public class UpdateTrajetRequest {
     private LocalDateTime horaireArrivee;
     private Integer tempsTrajetMin;
     private Integer placesDisponibles;
+    private BigDecimal prix;
 }

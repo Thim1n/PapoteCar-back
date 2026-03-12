@@ -4,6 +4,7 @@ import com.PapoteCar.PapoteCar.model.Trajet;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -15,6 +16,7 @@ public class TrajetResponse {
     private LocalDateTime horaireDepart;
     private LocalDateTime horaireArrivee;
     private Integer placesDisponibles;
+    private BigDecimal prix;
     private Trajet.Statut statut;
     private LocalDateTime createdAt;
 }
