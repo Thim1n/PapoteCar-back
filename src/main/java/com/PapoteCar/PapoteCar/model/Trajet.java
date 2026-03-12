@@ -34,8 +34,8 @@ public class Trajet implements Serializable {
     @Column(name = "depart_ville", nullable = false, length = 100)
     private String departVille;
 
-    @Column(name = "depart_departement", length = 100)
-    private String departDepartement;
+    @Column(name = "depart_code_postal", length = 10)
+    private String departCodePostal;
 
     @Column(name = "depart_latitude", precision = 9, scale = 6)
     private BigDecimal departLatitude;
@@ -49,8 +49,8 @@ public class Trajet implements Serializable {
     @Column(name = "arrivee_ville", nullable = false, length = 100)
     private String arriveeVille;
 
-    @Column(name = "arrivee_departement", length = 100)
-    private String arriveeDepartement;
+    @Column(name = "arrivee_code_postal", length = 10)
+    private String arriveeCodePostal;
 
     @Column(name = "arrivee_latitude", precision = 9, scale = 6)
     private BigDecimal arriveeLatitude;

@@ -12,7 +12,7 @@ public class CreateTrajetRequest {
     // Adresse départ — fournie par l'API adresse gouv ou saisie libre
     private String departRue;
     private String departVille;
-    private String departDepartement;
+    private String departCodePostal;
     // Coordonnées départ — fournies par Google Maps / API adresse gouv
     private BigDecimal departLatitude;
     private BigDecimal departLongitude;
@@ -20,7 +20,7 @@ public class CreateTrajetRequest {
     // Adresse arrivée
     private String arriveeRue;
     private String arriveeVille;
-    private String arriveeDepartement;
+    private String arriveeCodePostal;
     // Coordonnées arrivée
     private BigDecimal arriveeLatitude;
     private BigDecimal arriveeLongitude;
