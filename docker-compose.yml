@@ -4,6 +4,8 @@
 # Usage : docker compose pull && docker compose up -d
 # =============================================================
 
+name: papotecar
+
 services:
 
   papotecar-db:
