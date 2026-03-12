@@ -4,6 +4,7 @@ import com.PapoteCar.PapoteCar.model.Trajet;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -14,10 +15,16 @@ public class TrajetDetailResponse {
     private String conducteurPrenom;
     private String voitureModele;
     private Integer voitureNbPassagers;
-    private String departVille;
     private String departRue;
-    private String arriveeVille;
+    private String departVille;
+    private String departDepartement;
+    private BigDecimal departLatitude;
+    private BigDecimal departLongitude;
     private String arriveeRue;
+    private String arriveeVille;
+    private String arriveeDepartement;
+    private BigDecimal arriveeLatitude;
+    private BigDecimal arriveeLongitude;
     private LocalDateTime horaireDepart;
     private LocalDateTime horaireArrivee;
     private Integer tempsTrajetMin;

@@ -20,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -59,13 +60,28 @@ public class TrajetController {
         return ResponseEntity.ok(trajets);
     }
 
-    // GET /trajets — recherche avec filtres optionnels
+    private static double haversineKm(double lat1, double lon1, double lat2, double lon2) {
+        final double R = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // GET /trajets — recherche avec filtres optionnels (ville ou GPS)
     @GetMapping("/trajets")
     public ResponseEntity<List<TrajetDetailResponse>> searchTrajets(
             @RequestParam(required = false) String departVille,
             @RequestParam(required = false) String arriveeVille,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam(required = false) Integer placesMin) {
+            @RequestParam(required = false) Integer placesMin,
+            @RequestParam(required = false) Double departLat,
+            @RequestParam(required = false) Double departLon,
+            @RequestParam(required = false) Double arriveeLat,
+            @RequestParam(required = false) Double arriveeLon,
+            @RequestParam(required = false, defaultValue = "20.0") Double rayonKm) {
 
         LocalDateTime dateDebut = null;
         LocalDateTime dateFin = null;
@@ -74,19 +90,49 @@ public class TrajetController {
             dateFin = date.plusDays(1).atStartOfDay();
         }
 
-        List<TrajetDetailResponse> trajets = trajetRepository
-                .searchTrajets(departVille, arriveeVille, dateDebut, dateFin, placesMin)
-                .stream()
+        boolean modeGps = (departLat != null && departLon != null) || (arriveeLat != null && arriveeLon != null);
+
+        List<Trajet> trajets;
+        if (modeGps) {
+            trajets = trajetRepository.searchTrajetsActifs(dateDebut, dateFin, placesMin)
+                    .stream()
+                    .filter(t -> {
+                        if (departLat != null && departLon != null) {
+                            BigDecimal tLat = t.getDepartLatitude();
+                            BigDecimal tLon = t.getDepartLongitude();
+                            if (tLat == null || tLon == null) return false;
+                            if (haversineKm(departLat, departLon, tLat.doubleValue(), tLon.doubleValue()) > rayonKm) return false;
+                        }
+                        if (arriveeLat != null && arriveeLon != null) {
+                            BigDecimal tLat = t.getArriveeLatitude();
+                            BigDecimal tLon = t.getArriveeLongitude();
+                            if (tLat == null || tLon == null) return false;
+                            if (haversineKm(arriveeLat, arriveeLon, tLat.doubleValue(), tLon.doubleValue()) > rayonKm) return false;
+                        }
+                        return true;
+                    })
+                    .toList();
+        } else {
+            trajets = trajetRepository.searchTrajets(departVille, arriveeVille, dateDebut, dateFin, placesMin);
+        }
+
+        List<TrajetDetailResponse> responses = trajets.stream()
                 .map(trajet -> new TrajetDetailResponse(
                         trajet.getId(),
                         trajet.getConducteur().getNom(),
                         trajet.getConducteur().getPrenom(),
                         trajet.getVoiture().getModele(),
                         trajet.getVoiture().getNbPassagers(),
-                        trajet.getDepartVille(),
                         trajet.getDepartRue(),
-                        trajet.getArriveeVille(),
+                        trajet.getDepartVille(),
+                        trajet.getDepartDepartement(),
+                        trajet.getDepartLatitude(),
+                        trajet.getDepartLongitude(),
                         trajet.getArriveeRue(),
+                        trajet.getArriveeVille(),
+                        trajet.getArriveeDepartement(),
+                        trajet.getArriveeLatitude(),
+                        trajet.getArriveeLongitude(),
                         trajet.getHoraireDepart(),
                         trajet.getHoraireArrivee(),
                         trajet.getTempsTrajetMin(),
@@ -94,7 +140,7 @@ public class TrajetController {
                         trajet.getStatut()
                 ))
                 .toList();
-        return ResponseEntity.ok(trajets);
+        return ResponseEntity.ok(responses);
     }
 
     // GET /trajets/{id} — détail enrichi
@@ -109,10 +155,16 @@ public class TrajetController {
                 trajet.getConducteur().getPrenom(),
                 trajet.getVoiture().getModele(),
                 trajet.getVoiture().getNbPassagers(),
-                trajet.getDepartVille(),
                 trajet.getDepartRue(),
-                trajet.getArriveeVille(),
+                trajet.getDepartVille(),
+                trajet.getDepartDepartement(),
+                trajet.getDepartLatitude(),
+                trajet.getDepartLongitude(),
                 trajet.getArriveeRue(),
+                trajet.getArriveeVille(),
+                trajet.getArriveeDepartement(),
+                trajet.getArriveeLatitude(),
+                trajet.getArriveeLongitude(),
                 trajet.getHoraireDepart(),
                 trajet.getHoraireArrivee(),
                 trajet.getTempsTrajetMin(),
@@ -152,10 +204,16 @@ public class TrajetController {
         Trajet trajet = new Trajet();
         trajet.setConducteur(connecte);
         trajet.setVoiture(voiture);
-        trajet.setDepartVille(request.getDepartVille());
         trajet.setDepartRue(request.getDepartRue());
-        trajet.setArriveeVille(request.getArriveeVille());
+        trajet.setDepartVille(request.getDepartVille());
+        trajet.setDepartDepartement(request.getDepartDepartement());
+        trajet.setDepartLatitude(request.getDepartLatitude());
+        trajet.setDepartLongitude(request.getDepartLongitude());
         trajet.setArriveeRue(request.getArriveeRue());
+        trajet.setArriveeVille(request.getArriveeVille());
+        trajet.setArriveeDepartement(request.getArriveeDepartement());
+        trajet.setArriveeLatitude(request.getArriveeLatitude());
+        trajet.setArriveeLongitude(request.getArriveeLongitude());
         trajet.setHoraireDepart(request.getHoraireDepart());
         trajet.setHoraireArrivee(request.getHoraireArrivee());
         trajet.setTempsTrajetMin(request.getTempsTrajetMin());
@@ -171,10 +229,16 @@ public class TrajetController {
                 connecte.getPrenom(),
                 voiture.getModele(),
                 voiture.getNbPassagers(),
-                sauvegarde.getDepartVille(),
                 sauvegarde.getDepartRue(),
-                sauvegarde.getArriveeVille(),
+                sauvegarde.getDepartVille(),
+                sauvegarde.getDepartDepartement(),
+                sauvegarde.getDepartLatitude(),
+                sauvegarde.getDepartLongitude(),
                 sauvegarde.getArriveeRue(),
+                sauvegarde.getArriveeVille(),
+                sauvegarde.getArriveeDepartement(),
+                sauvegarde.getArriveeLatitude(),
+                sauvegarde.getArriveeLongitude(),
                 sauvegarde.getHoraireDepart(),
                 sauvegarde.getHoraireArrivee(),
                 sauvegarde.getTempsTrajetMin(),
@@ -201,10 +265,16 @@ public class TrajetController {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
 
-        if (request.getDepartVille() != null) trajet.setDepartVille(request.getDepartVille());
         if (request.getDepartRue() != null) trajet.setDepartRue(request.getDepartRue());
-        if (request.getArriveeVille() != null) trajet.setArriveeVille(request.getArriveeVille());
+        if (request.getDepartVille() != null) trajet.setDepartVille(request.getDepartVille());
+        if (request.getDepartDepartement() != null) trajet.setDepartDepartement(request.getDepartDepartement());
+        if (request.getDepartLatitude() != null) trajet.setDepartLatitude(request.getDepartLatitude());
+        if (request.getDepartLongitude() != null) trajet.setDepartLongitude(request.getDepartLongitude());
         if (request.getArriveeRue() != null) trajet.setArriveeRue(request.getArriveeRue());
+        if (request.getArriveeVille() != null) trajet.setArriveeVille(request.getArriveeVille());
+        if (request.getArriveeDepartement() != null) trajet.setArriveeDepartement(request.getArriveeDepartement());
+        if (request.getArriveeLatitude() != null) trajet.setArriveeLatitude(request.getArriveeLatitude());
+        if (request.getArriveeLongitude() != null) trajet.setArriveeLongitude(request.getArriveeLongitude());
         if (request.getHoraireDepart() != null) trajet.setHoraireDepart(request.getHoraireDepart());
         if (request.getHoraireArrivee() != null) trajet.setHoraireArrivee(request.getHoraireArrivee());
         if (request.getTempsTrajetMin() != null) trajet.setTempsTrajetMin(request.getTempsTrajetMin());
@@ -238,10 +308,16 @@ public class TrajetController {
                 sauvegarde.getConducteur().getPrenom(),
                 sauvegarde.getVoiture().getModele(),
                 sauvegarde.getVoiture().getNbPassagers(),
-                sauvegarde.getDepartVille(),
                 sauvegarde.getDepartRue(),
-                sauvegarde.getArriveeVille(),
+                sauvegarde.getDepartVille(),
+                sauvegarde.getDepartDepartement(),
+                sauvegarde.getDepartLatitude(),
+                sauvegarde.getDepartLongitude(),
                 sauvegarde.getArriveeRue(),
+                sauvegarde.getArriveeVille(),
+                sauvegarde.getArriveeDepartement(),
+                sauvegarde.getArriveeLatitude(),
+                sauvegarde.getArriveeLongitude(),
                 sauvegarde.getHoraireDepart(),
                 sauvegarde.getHoraireArrivee(),
                 sauvegarde.getTempsTrajetMin(),
@@ -301,10 +377,16 @@ public class TrajetController {
                 trajet.getConducteur().getPrenom(),
                 trajet.getVoiture().getModele(),
                 trajet.getVoiture().getNbPassagers(),
-                trajet.getDepartVille(),
                 trajet.getDepartRue(),
-                trajet.getArriveeVille(),
+                trajet.getDepartVille(),
+                trajet.getDepartDepartement(),
+                trajet.getDepartLatitude(),
+                trajet.getDepartLongitude(),
                 trajet.getArriveeRue(),
+                trajet.getArriveeVille(),
+                trajet.getArriveeDepartement(),
+                trajet.getArriveeLatitude(),
+                trajet.getArriveeLongitude(),
                 trajet.getHoraireDepart(),
                 trajet.getHoraireArrivee(),
                 trajet.getTempsTrajetMin(),
