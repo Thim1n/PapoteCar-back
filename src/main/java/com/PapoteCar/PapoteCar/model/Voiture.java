@@ -29,6 +29,7 @@ public class Voiture implements Serializable {
     @Column(length = 20)
     private String couleur;
 
-    @Column(name = "taille_coffre")
-    private Integer tailleCoffre;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "taille_coffre", length = 10)
+    private TailleCoffre tailleCoffre;
 }

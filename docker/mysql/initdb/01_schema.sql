@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS voitures (
     modele          VARCHAR(100) NOT NULL,
     nb_passagers    INT          NOT NULL,
     couleur         VARCHAR(20),
-    taille_coffre   INT,
+    taille_coffre   ENUM('Petit','Moyen','Grand'),
     PRIMARY KEY (id),
     CONSTRAINT fk_voiture_utilisateur
         FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id)

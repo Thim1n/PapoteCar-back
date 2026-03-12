@@ -19,11 +19,11 @@ INSERT INTO utilisateurs (nom, prenom, username, email, mot_de_passe, tel, permi
 -- Voitures
 -- -------------------------------------------------------------
 INSERT INTO voitures (utilisateur_id, modele, nb_passagers, taille_coffre) VALUES
-(1, 'Renault Zoé',         3, 338),
-(2, 'Peugeot e-208',       3, 311),
-(3, 'Tesla Model 3',       4, 594),
-(4, 'Volkswagen ID.4',     4, 543),
-(5, 'Toyota Yaris Cross',  3, 397);
+(1, 'Renault Zoé',         3, 'Moyen'),
+(2, 'Peugeot e-208',       3, 'Petit'),
+(3, 'Tesla Model 3',       4, 'Grand'),
+(4, 'Volkswagen ID.4',     4, 'Grand'),
+(5, 'Toyota Yaris Cross',  3, 'Moyen');
 
 -- -------------------------------------------------------------
 -- Trajets (DATE_ADD imbriqués — syntaxe MySQL valide)
