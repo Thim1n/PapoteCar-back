@@ -9,11 +9,11 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 public class CreateTrajetRequest {
-    // Adresse départ — fournie par l'API adresse gouv ou saisie libre
+    // Adresse départ
     private String departRue;
     private String departVille;
     private String departCodePostal;
-    // Coordonnées départ — fournies par Google Maps / API adresse gouv
+    // Coordonnées départ
     private BigDecimal departLatitude;
     private BigDecimal departLongitude;
 
