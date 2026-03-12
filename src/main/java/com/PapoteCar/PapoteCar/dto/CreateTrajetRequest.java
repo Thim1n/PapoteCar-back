@@ -1,20 +1,20 @@
 package com.PapoteCar.PapoteCar.dto;
 
-import com.PapoteCar.PapoteCar.model.Trajet;
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Data
-@AllArgsConstructor
-public class TrajetResponse {
-    private Integer id;
+@NoArgsConstructor
+public class CreateTrajetRequest {
     private String departVille;
+    private String departRue;
     private String arriveeVille;
+    private String arriveeRue;
+    private Integer voitureId;
     private LocalDateTime horaireDepart;
     private LocalDateTime horaireArrivee;
+    private Integer tempsTrajetMin;
     private Integer placesDisponibles;
-    private Trajet.Statut statut;
-    private LocalDateTime createdAt;
 }

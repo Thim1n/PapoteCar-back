@@ -35,6 +35,9 @@ public class Utilisateur implements Serializable {
     @Column(length = 20)
     private String tel;
 
+    @Column(name = "permis_de_conduire", nullable = false)
+    private boolean permisDeConduire = false;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

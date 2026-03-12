@@ -9,4 +9,6 @@ public class VoitureResponse {
     private Integer id;
     private String modele;
     private Integer nbPassagers;
+    private String couleur;
+    private Integer tailleCoffre;
 }

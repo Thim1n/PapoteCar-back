@@ -8,4 +8,6 @@ import lombok.NoArgsConstructor;
 public class CreateVoitureRequest {
     private String modele;
     private Integer nbPassagers;
+    private String couleur;
+    private Integer tailleCoffre;
 }

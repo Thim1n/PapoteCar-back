@@ -25,4 +25,10 @@ public class Voiture implements Serializable {
 
     @Column(name = "nb_passagers", nullable = false)
     private Integer nbPassagers;
+
+    @Column(length = 20)
+    private String couleur;
+
+    @Column(name = "taille_coffre")
+    private Integer tailleCoffre;
 }
