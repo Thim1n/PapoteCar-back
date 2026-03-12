@@ -7,6 +7,13 @@ import com.PapoteCar.PapoteCar.model.Trajet;
 import com.PapoteCar.PapoteCar.model.Utilisateur;
 import com.PapoteCar.PapoteCar.repository.TrajetRepository;
 import com.PapoteCar.PapoteCar.repository.UtilisateurRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.util.List;
 
+@Tag(name = "Utilisateur", description = "Gestion du profil utilisateur")
 @Slf4j
 @RestController
 @RequestMapping("/user")
@@ -33,6 +41,10 @@ public class UtilisateurController {
                 .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
     }
 
+    @Operation(summary = "Mon profil", description = "Retourne le profil complet de l'utilisateur connecté (id, nom, prenom, email, tel, solde, permisDeConduire, createdAt).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Profil retourné")
+    })
     @GetMapping("/me")
     public ResponseEntity<UtilisateurResponse> getMe() {
         Utilisateur connecte = utilisateurConnecte();
@@ -48,6 +60,17 @@ public class UtilisateurController {
         ));
     }
 
+    @Operation(
+            summary = "Déposer son permis de conduire",
+            description = """
+                    Upload d'un fichier image du permis de conduire (form-data, champ `fichier`).
+                    Passe `permisDeConduire` à `true` sans vérification (POC).
+                    Requis pour pouvoir créer des trajets.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Permis validé — profil mis à jour avec permisDeConduire=true")
+    })
     @PostMapping("/me/permis")
     public ResponseEntity<UtilisateurResponse> uploadPermis(@RequestParam("fichier") MultipartFile fichier) {
         Utilisateur connecte = utilisateurConnecte();
@@ -66,8 +89,22 @@ public class UtilisateurController {
         ));
     }
 
+    @Operation(
+            summary = "Profil d'un utilisateur par ID",
+            description = """
+                    Retourne le profil d'un utilisateur.
+                    - **Propre profil** : tous les champs visibles (email, tel, solde)
+                    - **Profil d'un autre** : email, tel et solde masqués (null)
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Profil retourné"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur introuvable",
+                    content = @Content(schema = @Schema(example = "Utilisateur introuvable")))
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<UtilisateurResponse> getUtilisateur(@PathVariable Integer id) {
+    public ResponseEntity<UtilisateurResponse> getUtilisateur(
+            @Parameter(description = "ID de l'utilisateur", example = "1") @PathVariable Integer id) {
         Utilisateur cible = utilisateurRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
 
@@ -75,8 +112,8 @@ public class UtilisateurController {
         boolean estProprietaire = connecte.getId().equals(id);
         String email = estProprietaire ? cible.getEmail() : null;
         String tel   = estProprietaire ? cible.getTel()   : null;
-
         BigDecimal solde = estProprietaire ? cible.getSolde() : null;
+
         return ResponseEntity.ok(new UtilisateurResponse(
                 cible.getId(),
                 cible.getNom(),
@@ -89,9 +126,18 @@ public class UtilisateurController {
         ));
     }
 
+    @Operation(
+            summary = "Modifier son profil",
+            description = "Met à jour le profil de l'utilisateur connecté. Tous les champs sont optionnels (PATCH partiel). Seuls `nom`, `prenom` et `tel` sont modifiables."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Profil mis à jour"),
+            @ApiResponse(responseCode = "403", description = "L'ID ne correspond pas à l'utilisateur connecté",
+                    content = @Content(schema = @Schema(hidden = true)))
+    })
     @PatchMapping("/{id}")
     public ResponseEntity<UtilisateurResponse> updateUtilisateur(
-            @PathVariable Integer id,
+            @Parameter(description = "ID de l'utilisateur (doit être le sien)", example = "1") @PathVariable Integer id,
             @RequestBody UpdateUtilisateurRequest request) {
 
         Utilisateur connecte = utilisateurConnecte();
@@ -119,8 +165,18 @@ public class UtilisateurController {
         ));
     }
 
+    @Operation(
+            summary = "Trajets d'un utilisateur (conducteur)",
+            description = "Retourne la liste de tous les trajets créés par cet utilisateur en tant que conducteur (tous statuts confondus)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Liste des trajets (vide si aucun)"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur introuvable",
+                    content = @Content(schema = @Schema(example = "Utilisateur introuvable")))
+    })
     @GetMapping("/{id}/trajets")
-    public ResponseEntity<List<TrajetResponse>> getTrajetsUtilisateur(@PathVariable Integer id) {
+    public ResponseEntity<List<TrajetResponse>> getTrajetsUtilisateur(
+            @Parameter(description = "ID de l'utilisateur", example = "1") @PathVariable Integer id) {
         utilisateurRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
 
@@ -141,8 +197,20 @@ public class UtilisateurController {
         return ResponseEntity.ok(trajets);
     }
 
+    @Operation(
+            summary = "Supprimer son compte",
+            description = "Supprime définitivement le compte. La suppression cascade sur les voitures et trajets associés."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Compte supprimé"),
+            @ApiResponse(responseCode = "403", description = "L'ID ne correspond pas à l'utilisateur connecté",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "409", description = "L'utilisateur a des trajets actifs — annuler les trajets avant de supprimer le compte",
+                    content = @Content(schema = @Schema(example = "Impossible de supprimer votre compte : vous avez un trajet actif en cours")))
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUtilisateur(@PathVariable Integer id) {
+    public ResponseEntity<?> deleteUtilisateur(
+            @Parameter(description = "ID de l'utilisateur (doit être le sien)", example = "1") @PathVariable Integer id) {
         Utilisateur connecte = utilisateurConnecte();
         if (!connecte.getId().equals(id)) {
             log.warn("Accès interdit : utilisateur id={} tente de supprimer le compte id={}", connecte.getId(), id);
@@ -169,6 +237,4 @@ public class UtilisateurController {
         log.error("Erreur inattendue dans UtilisateurController : {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
     }
-
-
 }

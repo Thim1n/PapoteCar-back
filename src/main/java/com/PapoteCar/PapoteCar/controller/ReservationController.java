@@ -9,6 +9,13 @@ import com.PapoteCar.PapoteCar.model.Utilisateur;
 import com.PapoteCar.PapoteCar.repository.ReservationRepository;
 import com.PapoteCar.PapoteCar.repository.TrajetRepository;
 import com.PapoteCar.PapoteCar.repository.UtilisateurRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Tag(name = "Réservation", description = "Cycle de vie d'une réservation : en_attente → valide/refuse → annule")
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -35,9 +43,31 @@ public class ReservationController {
                 .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
     }
 
-    // POST /trajets/{id}/reservations — S'inscrire sur un trajet
+    @Operation(
+            summary = "S'inscrire sur un trajet (passager)",
+            description = """
+                    Crée une réservation en statut `en_attente`. Les places ne sont pas décomptées avant validation.
+
+                    **Guards (dans l'ordre) :**
+                    1. 404 si le trajet n'existe pas
+                    2. 409 si le trajet n'est pas en statut `actif`
+                    3. 400 si l'utilisateur connecté est le conducteur du trajet
+                    4. 409 si une réservation existe déjà pour ce passager sur ce trajet
+                    5. 409 si plus de places disponibles (`placesDisponibles` = 0)
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Réservation créée en statut en_attente"),
+            @ApiResponse(responseCode = "400", description = "Le passager est le conducteur du trajet",
+                    content = @Content(schema = @Schema(example = "Vous ne pouvez pas réserver votre propre trajet"))),
+            @ApiResponse(responseCode = "404", description = "Trajet introuvable",
+                    content = @Content(schema = @Schema(example = "Trajet introuvable"))),
+            @ApiResponse(responseCode = "409", description = "Trajet inactif, déjà réservé par ce passager, ou trajet complet",
+                    content = @Content(schema = @Schema(example = "Ce trajet est complet, il ne reste plus de places disponibles")))
+    })
     @PostMapping("/trajets/{id}/reservations")
-    public ResponseEntity<?> creerReservation(@PathVariable Integer id) {
+    public ResponseEntity<?> creerReservation(
+            @Parameter(description = "ID du trajet", example = "5") @PathVariable Integer id) {
         Trajet trajet = trajetRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trajet introuvable"));
 
@@ -83,9 +113,20 @@ public class ReservationController {
         ));
     }
 
-    // GET /trajets/{id}/reservations — Liste des passagers (conducteur uniquement)
+    @Operation(
+            summary = "Liste des passagers d'un trajet (conducteur)",
+            description = "Retourne toutes les réservations du trajet avec les informations de chaque passager (nom, prénom, statut). Accès réservé au conducteur du trajet."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Liste des réservations avec infos passagers"),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur connecté n'est pas conducteur de ce trajet",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Trajet introuvable",
+                    content = @Content(schema = @Schema(example = "Trajet introuvable")))
+    })
     @GetMapping("/trajets/{id}/reservations")
-    public ResponseEntity<List<ReservationAvecPassagerResponse>> getReservationsTrajet(@PathVariable Integer id) {
+    public ResponseEntity<List<ReservationAvecPassagerResponse>> getReservationsTrajet(
+            @Parameter(description = "ID du trajet", example = "1") @PathVariable Integer id) {
         Trajet trajet = trajetRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trajet introuvable"));
 
@@ -111,9 +152,24 @@ public class ReservationController {
         return ResponseEntity.ok(reservations);
     }
 
-    // GET /reservations/{id} — Détail d'une réservation (passager OU conducteur du trajet)
+    @Operation(
+            summary = "Détail d'une réservation",
+            description = """
+                    Retourne le détail complet d'une réservation (trajet + passager + statut).
+
+                    **Double autorisation :** passager de la réservation OU conducteur du trajet.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Détail de la réservation"),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur n'est ni le passager ni le conducteur du trajet",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Réservation introuvable",
+                    content = @Content(schema = @Schema(example = "Réservation introuvable")))
+    })
     @GetMapping("/reservations/{id}")
-    public ResponseEntity<ReservationDetailResponse> getReservation(@PathVariable Integer id) {
+    public ResponseEntity<ReservationDetailResponse> getReservation(
+            @Parameter(description = "ID de la réservation", example = "1") @PathVariable Integer id) {
         Reservation reservation = reservationRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Réservation introuvable"));
 
@@ -140,10 +196,31 @@ public class ReservationController {
         ));
     }
 
-    // DELETE /reservations/{id} — Se désinscrire (passager)
+    @Operation(
+            summary = "Annuler sa réservation (passager)",
+            description = """
+                    Le passager annule sa propre réservation.
+
+                    **Effets selon le statut actuel (`@Transactional`) :**
+                    - `valide` → statut passe à `annule` + `trajet.placesDisponibles + 1` + `passager.solde + trajet.prix` (remboursement)
+                    - `en_attente` ou `refuse` → statut passe à `annule`, aucun impact sur les places ni le solde
+
+                    **Impossible si déjà `annule` (409).**
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Réservation annulée (remboursement si statut était valide)"),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur connecté n'est pas le passager de cette réservation",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Réservation introuvable",
+                    content = @Content(schema = @Schema(example = "Réservation introuvable"))),
+            @ApiResponse(responseCode = "409", description = "La réservation est déjà annulée",
+                    content = @Content(schema = @Schema(example = "Cette réservation est déjà annulée")))
+    })
     @Transactional
     @DeleteMapping("/reservations/{id}")
-    public ResponseEntity<?> annulerReservation(@PathVariable Integer id) {
+    public ResponseEntity<?> annulerReservation(
+            @Parameter(description = "ID de la réservation", example = "1") @PathVariable Integer id) {
         Reservation reservation = reservationRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Réservation introuvable"));
 
@@ -177,10 +254,36 @@ public class ReservationController {
         return ResponseEntity.noContent().build();
     }
 
-    // PUT /reservations/{id}/valider — Valider un passager (conducteur)
+    @Operation(
+            summary = "Valider un passager (conducteur)",
+            description = """
+                    Le conducteur accepte une demande de réservation en attente.
+
+                    **Effets atomiques (`@Transactional`) :**
+                    - `reservation.statut` → `valide`
+                    - `trajet.placesDisponibles - 1`
+                    - `passager.solde - trajet.prix`
+
+                    **Guards (dans l'ordre) :**
+                    1. 403 si l'utilisateur connecté n'est pas conducteur du trajet
+                    2. 409 si la réservation n'est pas en statut `en_attente`
+                    3. 409 si plus aucune place disponible sur le trajet
+                    4. 409 si le solde du passager est insuffisant (solde < prix du trajet)
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Réservation validée — places et solde mis à jour"),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur connecté n'est pas conducteur du trajet",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Réservation introuvable",
+                    content = @Content(schema = @Schema(example = "Réservation introuvable"))),
+            @ApiResponse(responseCode = "409", description = "Statut ≠ en_attente, trajet complet, ou solde passager insuffisant",
+                    content = @Content(schema = @Schema(example = "Impossible de valider : le passager ne dispose pas d'un solde suffisant")))
+    })
     @Transactional
     @PutMapping("/reservations/{id}/valider")
-    public ResponseEntity<?> validerReservation(@PathVariable Integer id) {
+    public ResponseEntity<?> validerReservation(
+            @Parameter(description = "ID de la réservation", example = "1") @PathVariable Integer id) {
         Reservation reservation = reservationRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Réservation introuvable"));
 
@@ -228,9 +331,28 @@ public class ReservationController {
         ));
     }
 
-    // PUT /reservations/{id}/refuser — Refuser un passager (conducteur)
+    @Operation(
+            summary = "Refuser un passager (conducteur)",
+            description = """
+                    Le conducteur refuse une demande de réservation en attente.
+
+                    **Effets :** `reservation.statut` → `refuse`. Aucune modification des places ni du solde.
+
+                    **Impossible si la réservation n'est pas en statut `en_attente` (409).**
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Réservation refusée"),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur connecté n'est pas conducteur du trajet",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Réservation introuvable",
+                    content = @Content(schema = @Schema(example = "Réservation introuvable"))),
+            @ApiResponse(responseCode = "409", description = "La réservation n'est pas en statut en_attente",
+                    content = @Content(schema = @Schema(example = "Impossible de refuser cette réservation : elle est en statut valide")))
+    })
     @PutMapping("/reservations/{id}/refuser")
-    public ResponseEntity<?> refuserReservation(@PathVariable Integer id) {
+    public ResponseEntity<?> refuserReservation(
+            @Parameter(description = "ID de la réservation", example = "1") @PathVariable Integer id) {
         Reservation reservation = reservationRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Réservation introuvable"));
 

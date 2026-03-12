@@ -9,6 +9,13 @@ import com.PapoteCar.PapoteCar.model.Voiture;
 import com.PapoteCar.PapoteCar.repository.TrajetRepository;
 import com.PapoteCar.PapoteCar.repository.UtilisateurRepository;
 import com.PapoteCar.PapoteCar.repository.VoitureRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Voiture", description = "Gestion des voitures — ownership vérifié sur toutes les routes")
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -33,7 +41,10 @@ public class VoitureController {
                 .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
     }
 
-    // GET /voitures — liste les voitures du connecté
+    @Operation(summary = "Mes voitures", description = "Retourne la liste des voitures appartenant à l'utilisateur connecté.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Liste des voitures (vide si aucune)")
+    })
     @GetMapping("/voitures")
     public ResponseEntity<List<VoitureResponse>> getMesVoitures() {
         Utilisateur connecte = utilisateurConnecte();
@@ -44,9 +55,17 @@ public class VoitureController {
         return ResponseEntity.ok(voitures);
     }
 
-    // GET /voiture/{id} — détail d'une voiture (ownership)
+    @Operation(summary = "Détail d'une voiture", description = "Retourne le détail d'une voiture. Accès réservé au propriétaire.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Voiture retournée"),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur connecté n'est pas propriétaire de cette voiture",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Voiture introuvable",
+                    content = @Content(schema = @Schema(example = "Voiture introuvable")))
+    })
     @GetMapping("/voiture/{id}")
-    public ResponseEntity<VoitureResponse> getVoiture(@PathVariable Integer id) {
+    public ResponseEntity<VoitureResponse> getVoiture(
+            @Parameter(description = "ID de la voiture", example = "1") @PathVariable Integer id) {
         Voiture voiture = voitureRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Voiture introuvable"));
 
@@ -59,7 +78,23 @@ public class VoitureController {
         return ResponseEntity.ok(new VoitureResponse(voiture.getId(), voiture.getModele(), voiture.getNbPassagers(), voiture.getCouleur(), voiture.getTailleCoffre()));
     }
 
-    // POST /voitures — créer une voiture
+    @Operation(
+            summary = "Créer une voiture",
+            description = """
+                    Crée une nouvelle voiture pour l'utilisateur connecté.
+
+                    **Champs :**
+                    - `modele` (obligatoire) — ex: "Renault Zoé"
+                    - `nbPassagers` (obligatoire, ≥ 1) — capacité maximale, utilisée pour valider `placesDisponibles` lors de la création d'un trajet
+                    - `couleur` (optionnel) — ex: "Blanche"
+                    - `tailleCoffre` (optionnel) — `Petit`, `Moyen` ou `Grand`
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Voiture créée"),
+            @ApiResponse(responseCode = "400", description = "Modèle manquant ou nbPassagers invalide",
+                    content = @Content(schema = @Schema(example = "Le modele est obligatoire")))
+    })
     @PostMapping("/voitures")
     public ResponseEntity<?> createVoiture(@RequestBody CreateVoitureRequest request) {
         if (request.getModele() == null || request.getModele().isBlank()) {
@@ -85,10 +120,28 @@ public class VoitureController {
                 .body(new VoitureResponse(sauvegardee.getId(), sauvegardee.getModele(), sauvegardee.getNbPassagers(), sauvegardee.getCouleur(), sauvegardee.getTailleCoffre()));
     }
 
-    // PATCH /voiture/{id} — modifier une voiture (ownership + guard trajet actif)
+    @Operation(
+            summary = "Modifier une voiture",
+            description = """
+                    Met à jour une voiture. Tous les champs sont optionnels (PATCH partiel).
+
+                    **Garde métier :** impossible de modifier une voiture utilisée dans un trajet actif (409).
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Voiture mise à jour"),
+            @ApiResponse(responseCode = "400", description = "Modèle vide ou nbPassagers invalide",
+                    content = @Content(schema = @Schema(example = "Le modele ne peut pas etre vide"))),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur connecté n'est pas propriétaire",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Voiture introuvable",
+                    content = @Content(schema = @Schema(example = "Voiture introuvable"))),
+            @ApiResponse(responseCode = "409", description = "La voiture est utilisée dans un trajet actif",
+                    content = @Content(schema = @Schema(example = "Impossible de modifier cette voiture : un trajet actif l'utilise actuellement")))
+    })
     @PatchMapping("/voiture/{id}")
     public ResponseEntity<?> updateVoiture(
-            @PathVariable Integer id,
+            @Parameter(description = "ID de la voiture", example = "1") @PathVariable Integer id,
             @RequestBody UpdateVoitureRequest request) {
 
         Voiture voiture = voitureRepository.findById(id)
@@ -123,9 +176,27 @@ public class VoitureController {
         return ResponseEntity.ok(new VoitureResponse(voiture.getId(), voiture.getModele(), voiture.getNbPassagers(), voiture.getCouleur(), voiture.getTailleCoffre()));
     }
 
-    // DELETE /voiture/{id} — supprimer une voiture (ownership + guard trajet actif)
+    @Operation(
+            summary = "Supprimer une voiture",
+            description = """
+                    Supprime définitivement une voiture.
+
+                    **Garde métier :** impossible de supprimer une voiture utilisée dans un trajet actif (409).
+                    Terminer ou annuler le trajet avant de supprimer la voiture.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Voiture supprimée"),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur connecté n'est pas propriétaire",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Voiture introuvable",
+                    content = @Content(schema = @Schema(example = "Voiture introuvable"))),
+            @ApiResponse(responseCode = "409", description = "La voiture est utilisée dans un trajet actif",
+                    content = @Content(schema = @Schema(example = "Impossible de supprimer cette voiture : un trajet actif l'utilise actuellement")))
+    })
     @DeleteMapping("/voiture/{id}")
-    public ResponseEntity<?> deleteVoiture(@PathVariable Integer id) {
+    public ResponseEntity<?> deleteVoiture(
+            @Parameter(description = "ID de la voiture", example = "1") @PathVariable Integer id) {
         voitureRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Voiture introuvable"));
 

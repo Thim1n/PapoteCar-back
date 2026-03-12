@@ -12,6 +12,13 @@ import com.PapoteCar.PapoteCar.repository.ReservationRepository;
 import com.PapoteCar.PapoteCar.repository.TrajetRepository;
 import com.PapoteCar.PapoteCar.repository.UtilisateurRepository;
 import com.PapoteCar.PapoteCar.repository.VoitureRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -26,6 +33,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Tag(name = "Trajet", description = "Création et recherche de trajets — permis de conduire requis pour créer")
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -42,7 +50,10 @@ public class TrajetController {
                 .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
     }
 
-    // GET /trajets/mes-trajets — déclaré AVANT /trajets/{id} pour éviter les conflits
+    @Operation(summary = "Mes trajets (conducteur)", description = "Retourne tous les trajets créés par l'utilisateur connecté en tant que conducteur (tous statuts).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Liste des trajets (vide si aucun)")
+    })
     @GetMapping("/trajets/mes-trajets")
     public ResponseEntity<List<TrajetResponse>> getMesTrajets() {
         Utilisateur connecte = utilisateurConnecte();
@@ -73,17 +84,49 @@ public class TrajetController {
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    // GET /trajets — recherche avec filtres optionnels (ville ou GPS)
+    @Operation(
+            summary = "Rechercher des trajets",
+            description = """
+                    Recherche des trajets actifs avec filtres optionnels.
+
+                    **Deux modes de recherche :**
+
+                    **Mode texte** (par défaut) — paramètres `departVille`, `arriveeVille`, `date`, `placesMin`
+                    ```
+                    GET /trajets?departVille=Paris&arriveeVille=Lyon&date=2026-04-01&placesMin=2
+                    ```
+
+                    **Mode GPS** — activé dès que `departLat`+`departLon` OU `arriveeLat`+`arriveeLon` sont présents.
+                    Utilise la formule Haversine. Les trajets sans coordonnées GPS sont exclus.
+                    ```
+                    GET /trajets?departLat=48.8566&departLon=2.3522&arriveeLat=45.764&arriveeLon=4.836&rayonKm=20
+                    ```
+
+                    Sans paramètre → retourne tous les trajets actifs.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Liste des trajets correspondants (vide si aucun)")
+    })
     @GetMapping("/trajets")
     public ResponseEntity<List<TrajetDetailResponse>> searchTrajets(
+            @Parameter(description = "Ville de départ (mode texte)", example = "Paris")
             @RequestParam(required = false) String departVille,
+            @Parameter(description = "Ville d'arrivée (mode texte)", example = "Lyon")
             @RequestParam(required = false) String arriveeVille,
+            @Parameter(description = "Date du trajet (ISO 8601)", example = "2026-04-01")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "Nombre de places minimum", example = "2")
             @RequestParam(required = false) Integer placesMin,
+            @Parameter(description = "Latitude du point de départ (mode GPS)", example = "48.8566")
             @RequestParam(required = false) Double departLat,
+            @Parameter(description = "Longitude du point de départ (mode GPS)", example = "2.3522")
             @RequestParam(required = false) Double departLon,
+            @Parameter(description = "Latitude du point d'arrivée (mode GPS)", example = "45.7640")
             @RequestParam(required = false) Double arriveeLat,
+            @Parameter(description = "Longitude du point d'arrivée (mode GPS)", example = "4.8357")
             @RequestParam(required = false) Double arriveeLon,
+            @Parameter(description = "Rayon de recherche en km (mode GPS, défaut 20)", example = "20")
             @RequestParam(required = false, defaultValue = "20.0") Double rayonKm) {
 
         LocalDateTime dateDebut = null;
@@ -147,9 +190,15 @@ public class TrajetController {
         return ResponseEntity.ok(responses);
     }
 
-    // GET /trajets/{id} — détail enrichi
+    @Operation(summary = "Détail d'un trajet", description = "Retourne le détail complet d'un trajet : conducteur, voiture, adresses, coordonnées GPS, horaires, places et prix.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Trajet retourné"),
+            @ApiResponse(responseCode = "404", description = "Trajet introuvable",
+                    content = @Content(schema = @Schema(example = "Trajet introuvable")))
+    })
     @GetMapping("/trajets/{id}")
-    public ResponseEntity<TrajetDetailResponse> getTrajet(@PathVariable Integer id) {
+    public ResponseEntity<TrajetDetailResponse> getTrajet(
+            @Parameter(description = "ID du trajet", example = "1") @PathVariable Integer id) {
         Trajet trajet = trajetRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trajet introuvable"));
 
@@ -178,7 +227,33 @@ public class TrajetController {
         ));
     }
 
-    // POST /trajets — créer un trajet
+    @Operation(
+            summary = "Créer un trajet",
+            description = """
+                    Crée un nouveau trajet. Nécessite un permis de conduire validé.
+
+                    **Champs adresse + GPS :**
+                    - `departRue`, `departVille`, `departCodePostal` — affichage côté front
+                    - `departLatitude`, `departLongitude` — fournis par l'API adresse.data.gouv.fr ou Google Maps, requis pour la recherche GPS
+                    - Idem pour l'arrivée
+
+                    **Règles de validation :**
+                    - `voitureId` doit appartenir à l'utilisateur connecté
+                    - `placesDisponibles` ≤ capacité de la voiture (`nbPassagers`)
+                    - `horaireDepart` obligatoire et doit être < `horaireArrivee`
+                    - Si `horaireArrivee` absent : `tempsTrajetMin` obligatoire (arrivée calculée automatiquement)
+                    - `prix` en euros par passager (optionnel, défaut 0.00)
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Trajet créé"),
+            @ApiResponse(responseCode = "400", description = "Validation échouée (champ manquant, horaires incohérents, places > capacité voiture)",
+                    content = @Content(schema = @Schema(example = "L'horaire de depart doit etre avant l'horaire d'arrivee"))),
+            @ApiResponse(responseCode = "403", description = "Permis de conduire non validé, ou voiture ne lui appartenant pas",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Voiture introuvable",
+                    content = @Content(schema = @Schema(example = "Voiture introuvable")))
+    })
     @Transactional
     @PostMapping("/trajets")
     public ResponseEntity<?> createTrajet(@RequestBody CreateTrajetRequest request) {
@@ -267,10 +342,30 @@ public class TrajetController {
         ));
     }
 
-    // PATCH /trajets/{id} — modifier un trajet
+    @Operation(
+            summary = "Modifier un trajet",
+            description = """
+                    Met à jour un trajet actif. Tous les champs sont optionnels (PATCH partiel).
+
+                    Si l'adresse est modifiée, envoyer les nouveaux champs GPS en même temps pour garder la cohérence.
+
+                    **Impossible si le trajet n'est pas en statut `actif` (409).**
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Trajet mis à jour"),
+            @ApiResponse(responseCode = "400", description = "Horaires incohérents ou places > capacité voiture",
+                    content = @Content(schema = @Schema(example = "L'horaire de depart doit etre avant l'horaire d'arrivee"))),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur connecté n'est pas conducteur de ce trajet, ou la nouvelle voiture ne lui appartient pas",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Trajet ou voiture introuvable",
+                    content = @Content(schema = @Schema(example = "Trajet introuvable"))),
+            @ApiResponse(responseCode = "409", description = "Le trajet n'est pas en statut actif",
+                    content = @Content(schema = @Schema(example = "Impossible de modifier ce trajet : il est termine")))
+    })
     @PatchMapping("/trajets/{id}")
     public ResponseEntity<?> updateTrajet(
-            @PathVariable Integer id,
+            @Parameter(description = "ID du trajet", example = "1") @PathVariable Integer id,
             @RequestBody UpdateTrajetRequest request) {
 
         Trajet trajet = trajetRepository.findByIdWithDetails(id)
@@ -313,12 +408,10 @@ public class TrajetController {
             trajet.setVoiture(voiture);
         }
 
-        // Validation post-PATCH : cohérence des horaires
         if (!trajet.getHoraireDepart().isBefore(trajet.getHoraireArrivee())) {
             return ResponseEntity.badRequest().body("L'horaire de depart doit etre avant l'horaire d'arrivee");
         }
 
-        // Validation post-PATCH : places disponibles <= capacité voiture
         if (trajet.getPlacesDisponibles() > trajet.getVoiture().getNbPassagers()) {
             return ResponseEntity.badRequest()
                     .body("Le nombre de places disponibles ne peut pas depasser la capacite de la voiture");
@@ -352,10 +445,28 @@ public class TrajetController {
         ));
     }
 
-    // DELETE /trajets/{id} — annuler un trajet (soft delete + cascade reservations)
+    @Operation(
+            summary = "Annuler un trajet",
+            description = """
+                    Annule un trajet (soft delete → statut `annule`).
+                    Toutes les réservations associées passent également en statut `annule`.
+
+                    **Impossible si le trajet est déjà `annule` ou `termine` (409).**
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Trajet annulé — réservations cascade annulées"),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur connecté n'est pas conducteur",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Trajet introuvable",
+                    content = @Content(schema = @Schema(example = "Trajet introuvable"))),
+            @ApiResponse(responseCode = "409", description = "Le trajet est déjà annulé ou terminé",
+                    content = @Content(schema = @Schema(example = "Ce trajet est déjà termine et ne peut pas être annulé")))
+    })
     @Transactional
     @DeleteMapping("/trajets/{id}")
-    public ResponseEntity<?> deleteTrajet(@PathVariable Integer id) {
+    public ResponseEntity<?> deleteTrajet(
+            @Parameter(description = "ID du trajet", example = "1") @PathVariable Integer id) {
         Trajet trajet = trajetRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trajet introuvable"));
 
@@ -383,9 +494,26 @@ public class TrajetController {
         return ResponseEntity.noContent().build();
     }
 
-    // PUT /trajets/{id}/terminer — terminer un trajet
+    @Operation(
+            summary = "Terminer un trajet",
+            description = """
+                    Passe le trajet en statut `termine`.
+
+                    **Impossible si le trajet n'est pas en statut `actif` (409).**
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Trajet terminé — détail retourné"),
+            @ApiResponse(responseCode = "403", description = "L'utilisateur connecté n'est pas conducteur",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "Trajet introuvable",
+                    content = @Content(schema = @Schema(example = "Trajet introuvable"))),
+            @ApiResponse(responseCode = "409", description = "Le trajet n'est pas en statut actif",
+                    content = @Content(schema = @Schema(example = "Impossible de terminer ce trajet : il est annule")))
+    })
     @PutMapping("/trajets/{id}/terminer")
-    public ResponseEntity<?> terminerTrajet(@PathVariable Integer id) {
+    public ResponseEntity<?> terminerTrajet(
+            @Parameter(description = "ID du trajet", example = "1") @PathVariable Integer id) {
         Trajet trajet = trajetRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trajet introuvable"));
 
