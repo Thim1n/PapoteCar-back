@@ -13,6 +13,7 @@ import com.PapoteCar.PapoteCar.repository.TrajetRepository;
 import com.PapoteCar.PapoteCar.repository.UtilisateurRepository;
 import com.PapoteCar.PapoteCar.repository.VoitureRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class TrajetController {
@@ -183,13 +185,14 @@ public class TrajetController {
         Utilisateur connecte = utilisateurConnecte();
 
         if (!connecte.isPermisDeConduire()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Permis de conduire requis pour créer un trajet");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         Voiture voiture = voitureRepository.findById(request.getVoitureId())
                 .orElseThrow(() -> new IllegalArgumentException("Voiture introuvable"));
 
         if (!voiture.getUtilisateur().getId().equals(connecte.getId())) {
+            log.warn("Accès interdit : utilisateur id={} ne possède pas la voiture id={}", connecte.getId(), request.getVoitureId());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -237,6 +240,7 @@ public class TrajetController {
         trajet.setCreatedAt(LocalDateTime.now());
 
         Trajet sauvegarde = trajetRepository.save(trajet);
+        log.info("Trajet créé id={} par conducteur id={}", sauvegarde.getId(), connecte.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new TrajetDetailResponse(
                 sauvegarde.getId(),
@@ -274,11 +278,13 @@ public class TrajetController {
 
         Utilisateur connecte = utilisateurConnecte();
         if (!trajet.getConducteur().getId().equals(connecte.getId())) {
+            log.warn("Accès interdit : utilisateur id={} tente de modifier le trajet id={}", connecte.getId(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         if (trajet.getStatut() != Trajet.Statut.actif) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            log.warn("Conflit modification trajet id={} : statut={}", id, trajet.getStatut());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Impossible de modifier ce trajet : il est " + trajet.getStatut());
         }
 
         if (request.getDepartRue() != null) trajet.setDepartRue(request.getDepartRue());
@@ -301,6 +307,7 @@ public class TrajetController {
             Voiture voiture = voitureRepository.findById(request.getVoitureId())
                     .orElseThrow(() -> new IllegalArgumentException("Voiture introuvable"));
             if (!voiture.getUtilisateur().getId().equals(connecte.getId())) {
+                log.warn("Accès interdit : utilisateur id={} ne possède pas la voiture id={}", connecte.getId(), request.getVoitureId());
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             trajet.setVoiture(voiture);
@@ -318,6 +325,7 @@ public class TrajetController {
         }
 
         Trajet sauvegarde = trajetRepository.save(trajet);
+        log.info("Trajet mis à jour id={} par conducteur id={}", id, connecte.getId());
 
         return ResponseEntity.ok(new TrajetDetailResponse(
                 sauvegarde.getId(),
@@ -347,17 +355,19 @@ public class TrajetController {
     // DELETE /trajets/{id} — annuler un trajet (soft delete + cascade reservations)
     @Transactional
     @DeleteMapping("/trajets/{id}")
-    public ResponseEntity<Void> deleteTrajet(@PathVariable Integer id) {
+    public ResponseEntity<?> deleteTrajet(@PathVariable Integer id) {
         Trajet trajet = trajetRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trajet introuvable"));
 
         Utilisateur connecte = utilisateurConnecte();
         if (!trajet.getConducteur().getId().equals(connecte.getId())) {
+            log.warn("Accès interdit : utilisateur id={} tente d'annuler le trajet id={}", connecte.getId(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         if (trajet.getStatut() == Trajet.Statut.annule || trajet.getStatut() == Trajet.Statut.termine) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            log.warn("Conflit annulation trajet id={} : statut={}", id, trajet.getStatut());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Ce trajet est déjà " + trajet.getStatut() + " et ne peut pas être annulé");
         }
 
         trajet.setStatut(Trajet.Statut.annule);
@@ -369,6 +379,7 @@ public class TrajetController {
         }
         reservationRepository.saveAll(reservations);
 
+        log.info("Trajet annulé id={} par conducteur id={}, {} réservation(s) annulée(s)", id, connecte.getId(), reservations.size());
         return ResponseEntity.noContent().build();
     }
 
@@ -380,15 +391,18 @@ public class TrajetController {
 
         Utilisateur connecte = utilisateurConnecte();
         if (!trajet.getConducteur().getId().equals(connecte.getId())) {
+            log.warn("Accès interdit : utilisateur id={} tente de terminer le trajet id={}", connecte.getId(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         if (trajet.getStatut() != Trajet.Statut.actif) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            log.warn("Conflit terminer trajet id={} : statut={}", id, trajet.getStatut());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Impossible de terminer ce trajet : il est " + trajet.getStatut());
         }
 
         trajet.setStatut(Trajet.Statut.termine);
         trajetRepository.save(trajet);
+        log.info("Trajet terminé id={} par conducteur id={}", id, connecte.getId());
 
         return ResponseEntity.ok(new TrajetDetailResponse(
                 trajet.getId(),
@@ -422,6 +436,7 @@ public class TrajetController {
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<String> handleIllegalState(IllegalStateException ex) {
+        log.error("Erreur inattendue dans TrajetController : {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
     }
 }
