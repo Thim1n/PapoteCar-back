@@ -63,6 +63,8 @@ public class AuthService {
         return new AuthResponse(token, expireLabel());
     }
 
+
+
     private LocalDateTime expireLabel() {
         return LocalDate.now(ZoneId.of("Europe/Paris"))
                 .plusDays(1)
