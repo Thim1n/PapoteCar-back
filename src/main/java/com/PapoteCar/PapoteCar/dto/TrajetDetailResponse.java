@@ -17,12 +17,12 @@ public class TrajetDetailResponse {
     private Integer voitureNbPassagers;
     private String departRue;
     private String departVille;
-    private String departDepartement;
+    private String departCodePostal;
     private BigDecimal departLatitude;
     private BigDecimal departLongitude;
     private String arriveeRue;
     private String arriveeVille;
-    private String arriveeDepartement;
+    private String arriveeCodePostal;
     private BigDecimal arriveeLatitude;
     private BigDecimal arriveeLongitude;
     private LocalDateTime horaireDepart;

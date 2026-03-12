@@ -52,14 +52,14 @@ CREATE TABLE IF NOT EXISTS trajets (
     -- Adresse départ
     depart_rue            VARCHAR(255),
     depart_ville          VARCHAR(100)    NOT NULL,
-    depart_departement    VARCHAR(100),
+    depart_code_postal    VARCHAR(10),
     depart_latitude       DECIMAL(9, 6),
     depart_longitude      DECIMAL(9, 6),
 
     -- Adresse arrivée
     arrivee_rue           VARCHAR(255),
     arrivee_ville         VARCHAR(100)    NOT NULL,
-    arrivee_departement   VARCHAR(100),
+    arrivee_code_postal   VARCHAR(10),
     arrivee_latitude      DECIMAL(9, 6),
     arrivee_longitude     DECIMAL(9, 6),
 

@@ -125,12 +125,12 @@ public class TrajetController {
                         trajet.getVoiture().getNbPassagers(),
                         trajet.getDepartRue(),
                         trajet.getDepartVille(),
-                        trajet.getDepartDepartement(),
+                        trajet.getDepartCodePostal(),
                         trajet.getDepartLatitude(),
                         trajet.getDepartLongitude(),
                         trajet.getArriveeRue(),
                         trajet.getArriveeVille(),
-                        trajet.getArriveeDepartement(),
+                        trajet.getArriveeCodePostal(),
                         trajet.getArriveeLatitude(),
                         trajet.getArriveeLongitude(),
                         trajet.getHoraireDepart(),
@@ -157,12 +157,12 @@ public class TrajetController {
                 trajet.getVoiture().getNbPassagers(),
                 trajet.getDepartRue(),
                 trajet.getDepartVille(),
-                trajet.getDepartDepartement(),
+                trajet.getDepartCodePostal(),
                 trajet.getDepartLatitude(),
                 trajet.getDepartLongitude(),
                 trajet.getArriveeRue(),
                 trajet.getArriveeVille(),
-                trajet.getArriveeDepartement(),
+                trajet.getArriveeCodePostal(),
                 trajet.getArriveeLatitude(),
                 trajet.getArriveeLongitude(),
                 trajet.getHoraireDepart(),
@@ -217,12 +217,12 @@ public class TrajetController {
         trajet.setVoiture(voiture);
         trajet.setDepartRue(request.getDepartRue());
         trajet.setDepartVille(request.getDepartVille());
-        trajet.setDepartDepartement(request.getDepartDepartement());
+        trajet.setDepartCodePostal(request.getDepartCodePostal());
         trajet.setDepartLatitude(request.getDepartLatitude());
         trajet.setDepartLongitude(request.getDepartLongitude());
         trajet.setArriveeRue(request.getArriveeRue());
         trajet.setArriveeVille(request.getArriveeVille());
-        trajet.setArriveeDepartement(request.getArriveeDepartement());
+        trajet.setArriveeCodePostal(request.getArriveeCodePostal());
         trajet.setArriveeLatitude(request.getArriveeLatitude());
         trajet.setArriveeLongitude(request.getArriveeLongitude());
         trajet.setHoraireDepart(request.getHoraireDepart());
@@ -242,12 +242,12 @@ public class TrajetController {
                 voiture.getNbPassagers(),
                 sauvegarde.getDepartRue(),
                 sauvegarde.getDepartVille(),
-                sauvegarde.getDepartDepartement(),
+                sauvegarde.getDepartCodePostal(),
                 sauvegarde.getDepartLatitude(),
                 sauvegarde.getDepartLongitude(),
                 sauvegarde.getArriveeRue(),
                 sauvegarde.getArriveeVille(),
-                sauvegarde.getArriveeDepartement(),
+                sauvegarde.getArriveeCodePostal(),
                 sauvegarde.getArriveeLatitude(),
                 sauvegarde.getArriveeLongitude(),
                 sauvegarde.getHoraireDepart(),
@@ -278,12 +278,12 @@ public class TrajetController {
 
         if (request.getDepartRue() != null) trajet.setDepartRue(request.getDepartRue());
         if (request.getDepartVille() != null) trajet.setDepartVille(request.getDepartVille());
-        if (request.getDepartDepartement() != null) trajet.setDepartDepartement(request.getDepartDepartement());
+        if (request.getDepartCodePostal() != null) trajet.setDepartCodePostal(request.getDepartCodePostal());
         if (request.getDepartLatitude() != null) trajet.setDepartLatitude(request.getDepartLatitude());
         if (request.getDepartLongitude() != null) trajet.setDepartLongitude(request.getDepartLongitude());
         if (request.getArriveeRue() != null) trajet.setArriveeRue(request.getArriveeRue());
         if (request.getArriveeVille() != null) trajet.setArriveeVille(request.getArriveeVille());
-        if (request.getArriveeDepartement() != null) trajet.setArriveeDepartement(request.getArriveeDepartement());
+        if (request.getArriveeCodePostal() != null) trajet.setArriveeCodePostal(request.getArriveeCodePostal());
         if (request.getArriveeLatitude() != null) trajet.setArriveeLatitude(request.getArriveeLatitude());
         if (request.getArriveeLongitude() != null) trajet.setArriveeLongitude(request.getArriveeLongitude());
         if (request.getHoraireDepart() != null) trajet.setHoraireDepart(request.getHoraireDepart());
@@ -321,12 +321,12 @@ public class TrajetController {
                 sauvegarde.getVoiture().getNbPassagers(),
                 sauvegarde.getDepartRue(),
                 sauvegarde.getDepartVille(),
-                sauvegarde.getDepartDepartement(),
+                sauvegarde.getDepartCodePostal(),
                 sauvegarde.getDepartLatitude(),
                 sauvegarde.getDepartLongitude(),
                 sauvegarde.getArriveeRue(),
                 sauvegarde.getArriveeVille(),
-                sauvegarde.getArriveeDepartement(),
+                sauvegarde.getArriveeCodePostal(),
                 sauvegarde.getArriveeLatitude(),
                 sauvegarde.getArriveeLongitude(),
                 sauvegarde.getHoraireDepart(),
@@ -338,6 +338,7 @@ public class TrajetController {
     }
 
     // DELETE /trajets/{id} — annuler un trajet (soft delete + cascade reservations)
+    @Transactional
     @DeleteMapping("/trajets/{id}")
     public ResponseEntity<Void> deleteTrajet(@PathVariable Integer id) {
         Trajet trajet = trajetRepository.findByIdWithDetails(id)
@@ -390,12 +391,12 @@ public class TrajetController {
                 trajet.getVoiture().getNbPassagers(),
                 trajet.getDepartRue(),
                 trajet.getDepartVille(),
-                trajet.getDepartDepartement(),
+                trajet.getDepartCodePostal(),
                 trajet.getDepartLatitude(),
                 trajet.getDepartLongitude(),
                 trajet.getArriveeRue(),
                 trajet.getArriveeVille(),
-                trajet.getArriveeDepartement(),
+                trajet.getArriveeCodePostal(),
                 trajet.getArriveeLatitude(),
                 trajet.getArriveeLongitude(),
                 trajet.getHoraireDepart(),
