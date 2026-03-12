@@ -40,26 +40,45 @@ INSERT INTO trajets (
     horaire_depart, horaire_arrivee, temps_trajet_min, places_disponibles, prix, statut
 ) VALUES
 
--- trajet1 : ACTIF - Paris -> Lyon (Futur)
-(1, 1, '10 Rue de Rivoli', 'Paris', '75001', 48.857000, 2.351000, '1 Place Bellecour', 'Lyon', '69002', 45.757800, 4.832000,
- DATE_ADD(NOW(), INTERVAL 2 DAY), DATE_ADD(NOW(), INTERVAL 2 DAY + INTERVAL 120 MINUTE), 120, 2, 15.00, 'actif'),
+-- ── trajet1 : ACTIF — Paris→Lyon — +2 jours
+(1, 1,
+    '10 Rue de Rivoli',    'Paris', '75001', 48.857000,  2.351000,
+    '1 Place Bellecour',   'Lyon',  '69002', 45.757800,  4.832000,
+    DATE_ADD(NOW(), INTERVAL 2 DAY),
+    DATE_ADD(DATE_ADD(NOW(), INTERVAL 2 DAY), INTERVAL 120 MINUTE),
+    120, 2, 15.00, 'actif'),
 
--- trajet2 : TERMINÉ - Paris -> Marseille (Passé)
-(1, 2, '15 Av. des Champs-Elysées', 'Paris', '75008', 48.869600, 2.307700, '20 La Canebière', 'Marseille', '13001', 43.296400, 5.381000,
- DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(DATE_SUB(NOW(), INTERVAL 5 DAY), INTERVAL 115 MINUTE), 115, 0, 10.00, 'termine'),
+-- ── trajet2 : TERMINÉ — Paris→Marseille — -5 jours
+(1, 2,
+ '15 Av. des Champs-Elysées', 'Paris',     '75008', 48.869600,  2.307700,
+ '20 La Canebière',           'Marseille', '13001', 43.296400,  5.381000,
+ DATE_SUB(NOW(), INTERVAL 5 DAY),
+ DATE_ADD(DATE_SUB(NOW(), INTERVAL 5 DAY), INTERVAL 115 MINUTE),
+ 115, 0, 10.00, 'termine'),
 
--- trajet3 : ANNULÉ - Paris -> Bordeaux (Futur)
-(1, 2, '10 Rue de Rivoli', 'Paris', '75001', 48.857000, 2.351000, '1 Cours du Chapeau Rouge', 'Bordeaux', '33000', 44.836100, -0.570600,
- DATE_ADD(NOW(), INTERVAL 3 DAY), DATE_ADD(NOW(), INTERVAL 3 DAY + INTERVAL 200 MINUTE), 200, 2, 12.00, 'annule'),
+-- ── trajet3 : ANNULÉ — Paris→Bordeaux — +3 jours
+(1, 2,
+ '10 Rue de Rivoli',       'Paris',    '75001', 48.857000,  2.351000,
+ '1 Cours du Chapeau Rouge','Bordeaux', '33000', 44.836100, -0.570600,
+ DATE_ADD(NOW(), INTERVAL 3 DAY),
+ DATE_ADD(DATE_ADD(NOW(), INTERVAL 3 DAY), INTERVAL 200 MINUTE),
+ 200, 2, 12.00, 'annule'),
 
--- trajet4 : ACTIF COMPLET - Paris -> Nantes (Futur)
-(1, 1, '10 Rue de Rivoli', 'Paris', '75001', 48.857000, 2.351000, '1 Place du Commerce', 'Nantes', '44000', 47.213200, -1.553600,
- DATE_ADD(NOW(), INTERVAL 4 DAY), DATE_ADD(NOW(), INTERVAL 4 DAY + INTERVAL 140 MINUTE), 140, 0, 20.00, 'actif'),
+-- ── trajet4 : ACTIF — Paris→Nantes — +4 jours (COMPLET)
+(1, 1,
+ '10 Rue de Rivoli',   'Paris',  '75001', 48.857000,  2.351000,
+ '1 Place du Commerce','Nantes', '44000', 47.213200, -1.553600,
+ DATE_ADD(NOW(), INTERVAL 4 DAY),
+ DATE_ADD(DATE_ADD(NOW(), INTERVAL 4 DAY), INTERVAL 140 MINUTE),
+ 140, 0, 20.00, 'actif'),
 
--- trajet5 : ACTIF VIERGE - Paris -> Strasbourg (Futur)
-(1, 2, '10 Rue de Rivoli', 'Paris', '75001', 48.857000, 2.351000, '1 Place Kléber', 'Strasbourg', '67000', 48.583800, 7.747900,
- DATE_ADD(NOW(), INTERVAL 6 DAY), DATE_ADD(NOW(), INTERVAL 6 DAY + INTERVAL 130 MINUTE), 130, 3, 8.00, 'actif');
-
+-- ── trajet5 : ACTIF — Paris→Strasbourg — +6 jours (VIERGE)
+(1, 2,
+ '10 Rue de Rivoli',  'Paris',      '75001', 48.857000,  2.351000,
+ '1 Place Kléber',    'Strasbourg', '67000', 48.583800,  7.747900,
+ DATE_ADD(NOW(), INTERVAL 6 DAY),
+ DATE_ADD(DATE_ADD(NOW(), INTERVAL 6 DAY), INTERVAL 130 MINUTE),
+ 130, 3,  8.00, 'actif');
 -- -------------------------------------------------------------
 -- Réservations
 -- -------------------------------------------------------------
