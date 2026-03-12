@@ -1,6 +1,6 @@
 -- =============================================================
 -- PapoteCar - Script de données initiales (jeu de test)
--- Mots de passe encodés BCrypt (valeur : "Password1!")
+-- Mots de passe encodés BCrypt (valeur : "Test123")
 -- =============================================================
 
 USE papotecar;
@@ -8,22 +8,22 @@ USE papotecar;
 -- -------------------------------------------------------------
 -- Utilisateurs (5 conducteurs / passagers)
 -- -------------------------------------------------------------
-INSERT INTO utilisateurs (nom, prenom, username, email, mot_de_passe, tel) VALUES
-('Dupont',   'Alice',   'alice.d',   'alice.dupont@email.com',   '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0601020304'),
-('Martin',   'Bob',     'bob.m',     'bob.martin@email.com',     '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0611223344'),
-('Bernard',  'Camille', 'camille.b', 'camille.bernard@email.com','$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0622334455'),
-('Leroy',    'David',   'david.l',   'david.leroy@email.com',    '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0633445566'),
-('Moreau',   'Emma',    'emma.m',    'emma.moreau@email.com',    '$2a$12$u8Wp8iF3o5oRVw0xkR1e3.WrNKZU1bOdkRoaOjHLhPJsAnpLTFBOu', '0644556677');
+INSERT INTO utilisateurs (nom, prenom, username, email, mot_de_passe, tel, permis_de_conduire) VALUES
+('Dupont',   'Alice',   'alice.d',   'alice.dupont@email.com',   '$2a$10$Lj2TvhV3ne5.CWpNXSaxzOEPGSww54osDrL.DHitrW8k9smZkSk/i', '0601020304', 1),
+('Martin',   'Bob',     'bob.m',     'bob.martin@email.com',     '$2a$10$Lj2TvhV3ne5.CWpNXSaxzOEPGSww54osDrL.DHitrW8k9smZkSk/i', '0611223344', 1),
+('Bernard',  'Camille', 'camille.b', 'camille.bernard@email.com','$2a$10$Lj2TvhV3ne5.CWpNXSaxzOEPGSww54osDrL.DHitrW8k9smZkSk/i', '0622334455', 0),
+('Leroy',    'David',   'david.l',   'david.leroy@email.com',    '$2a$10$Lj2TvhV3ne5.CWpNXSaxzOEPGSww54osDrL.DHitrW8k9smZkSk/i', '0633445566', 0),
+('Moreau',   'Emma',    'emma.m',    'emma.moreau@email.com',    '$2a$10$Lj2TvhV3ne5.CWpNXSaxzOEPGSww54osDrL.DHitrW8k9smZkSk/i', '0644556677', 0);
 
 -- -------------------------------------------------------------
 -- Voitures
 -- -------------------------------------------------------------
-INSERT INTO voitures (utilisateur_id, modele, nb_passagers) VALUES
-(1, 'Renault Zoé',         3),
-(2, 'Peugeot e-208',       3),
-(3, 'Tesla Model 3',       4),
-(4, 'Volkswagen ID.4',     4),
-(5, 'Toyota Yaris Cross',  3);
+INSERT INTO voitures (utilisateur_id, modele, nb_passagers, taille_coffre) VALUES
+(1, 'Renault Zoé',         3, 338),
+(2, 'Peugeot e-208',       3, 311),
+(3, 'Tesla Model 3',       4, 594),
+(4, 'Volkswagen ID.4',     4, 543),
+(5, 'Toyota Yaris Cross',  3, 397);
 
 -- -------------------------------------------------------------
 -- Trajets (DATE_ADD imbriqués — syntaxe MySQL valide)

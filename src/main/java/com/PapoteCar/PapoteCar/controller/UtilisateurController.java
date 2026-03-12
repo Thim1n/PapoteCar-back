@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -38,7 +39,24 @@ public class UtilisateurController {
                 connecte.getPrenom(),
                 connecte.getTel(),
                 connecte.getCreatedAt(),
-                connecte.getEmail()
+                connecte.getEmail(),
+                connecte.isPermisDeConduire()
+        ));
+    }
+
+    @PostMapping("/me/permis")
+    public ResponseEntity<UtilisateurResponse> uploadPermis(@RequestParam("fichier") MultipartFile fichier) {
+        Utilisateur connecte = utilisateurConnecte();
+        connecte.setPermisDeConduire(true);
+        utilisateurRepository.save(connecte);
+        return ResponseEntity.ok(new UtilisateurResponse(
+                connecte.getId(),
+                connecte.getNom(),
+                connecte.getPrenom(),
+                connecte.getTel(),
+                connecte.getCreatedAt(),
+                connecte.getEmail(),
+                connecte.isPermisDeConduire()
         ));
     }
 
@@ -58,7 +76,8 @@ public class UtilisateurController {
                 cible.getPrenom(),
                 tel,
                 cible.getCreatedAt(),
-                email
+                email,
+                cible.isPermisDeConduire()
         ));
     }
 
@@ -84,7 +103,8 @@ public class UtilisateurController {
                 connecte.getPrenom(),
                 connecte.getTel(),
                 connecte.getCreatedAt(),
-                connecte.getEmail()
+                connecte.getEmail(),
+                connecte.isPermisDeConduire()
         ));
     }
 
@@ -94,15 +114,15 @@ public class UtilisateurController {
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
 
         List<TrajetResponse> trajets = trajetRepository.findByConducteurId(id).stream()
-                .map(t -> new TrajetResponse(
-                        t.getId(),
-                        t.getDepartVille(),
-                        t.getArriveeVille(),
-                        t.getHoraireDepart(),
-                        t.getHoraireArrivee(),
-                        t.getPlacesDisponibles(),
-                        t.getStatut(),
-                        t.getCreatedAt()
+                .map(trajet -> new TrajetResponse(
+                        trajet.getId(),
+                        trajet.getDepartVille(),
+                        trajet.getArriveeVille(),
+                        trajet.getHoraireDepart(),
+                        trajet.getHoraireArrivee(),
+                        trajet.getPlacesDisponibles(),
+                        trajet.getStatut(),
+                        trajet.getCreatedAt()
                 ))
                 .toList();
 

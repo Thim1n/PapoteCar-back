@@ -19,8 +19,9 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     username     VARCHAR(100) NOT NULL UNIQUE,
     email        VARCHAR(255) NOT NULL UNIQUE,
     mot_de_passe VARCHAR(255) NOT NULL,
-    tel          VARCHAR(20),
-    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    tel                VARCHAR(20),
+    permis_de_conduire TINYINT(1)   NOT NULL DEFAULT 0,
+    created_at         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -32,6 +33,8 @@ CREATE TABLE IF NOT EXISTS voitures (
     utilisateur_id  INT          NOT NULL,
     modele          VARCHAR(100) NOT NULL,
     nb_passagers    INT          NOT NULL,
+    couleur         VARCHAR(20),
+    taille_coffre   INT,
     PRIMARY KEY (id),
     CONSTRAINT fk_voiture_utilisateur
         FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id)

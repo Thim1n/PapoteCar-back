@@ -37,7 +37,7 @@ public class VoitureController {
         Utilisateur connecte = utilisateurConnecte();
         List<VoitureResponse> voitures = voitureRepository.findByUtilisateurId(connecte.getId())
                 .stream()
-                .map(v -> new VoitureResponse(v.getId(), v.getModele(), v.getNbPassagers()))
+                .map(v -> new VoitureResponse(v.getId(), v.getModele(), v.getNbPassagers(), v.getCouleur(), v.getTailleCoffre()))
                 .toList();
         return ResponseEntity.ok(voitures);
     }
@@ -53,7 +53,7 @@ public class VoitureController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        return ResponseEntity.ok(new VoitureResponse(voiture.getId(), voiture.getModele(), voiture.getNbPassagers()));
+        return ResponseEntity.ok(new VoitureResponse(voiture.getId(), voiture.getModele(), voiture.getNbPassagers(), voiture.getCouleur(), voiture.getTailleCoffre()));
     }
 
     // POST /voitures — créer une voiture
@@ -72,11 +72,13 @@ public class VoitureController {
         voiture.setUtilisateur(connecte);
         voiture.setModele(request.getModele());
         voiture.setNbPassagers(request.getNbPassagers());
+        voiture.setCouleur(request.getCouleur());
+        voiture.setTailleCoffre(request.getTailleCoffre());
 
         Voiture sauvegardee = voitureRepository.save(voiture);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new VoitureResponse(sauvegardee.getId(), sauvegardee.getModele(), sauvegardee.getNbPassagers()));
+                .body(new VoitureResponse(sauvegardee.getId(), sauvegardee.getModele(), sauvegardee.getNbPassagers(), sauvegardee.getCouleur(), sauvegardee.getTailleCoffre()));
     }
 
     // PATCH /voiture/{id} — modifier une voiture (ownership + guard trajet actif)
@@ -106,10 +108,12 @@ public class VoitureController {
 
         if (request.getModele() != null) voiture.setModele(request.getModele());
         if (request.getNbPassagers() != null) voiture.setNbPassagers(request.getNbPassagers());
+        if (request.getCouleur() != null) voiture.setCouleur(request.getCouleur());
+        if (request.getTailleCoffre() != null) voiture.setTailleCoffre(request.getTailleCoffre());
 
         voitureRepository.save(voiture);
 
-        return ResponseEntity.ok(new VoitureResponse(voiture.getId(), voiture.getModele(), voiture.getNbPassagers()));
+        return ResponseEntity.ok(new VoitureResponse(voiture.getId(), voiture.getModele(), voiture.getNbPassagers(), voiture.getCouleur(), voiture.getTailleCoffre()));
     }
 
     // DELETE /voiture/{id} — supprimer une voiture (ownership + guard trajet actif)

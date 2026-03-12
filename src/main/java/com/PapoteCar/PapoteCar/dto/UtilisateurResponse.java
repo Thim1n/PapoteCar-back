@@ -14,4 +14,5 @@ public class UtilisateurResponse {
     private String tel;
     private LocalDateTime createdAt;
     private String email; // null si profil public (pas son propre profil)
+    private boolean permisDeConduire;
 }
