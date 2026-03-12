@@ -18,9 +18,11 @@ jobs:
           - name: app
             context: .
             dockerfile: docker/app/Dockerfile
+            build_args: JWT_SECRET=${{ secrets.JWT_SECRET }}
           - name: mysql
             context: docker/mysql
             dockerfile: docker/mysql/Dockerfile
+            build_args: ""
 
     steps:
       - name: Checkout
@@ -40,6 +42,7 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           platforms: linux/amd64
+          build-args: ${{ matrix.build_args }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/papotecar-back/${{ matrix.name }}:latest
             ghcr.io/${{ github.repository_owner }}/papotecar-back/${{ matrix.name }}:${{ github.sha }}
