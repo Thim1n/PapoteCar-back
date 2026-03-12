@@ -8,6 +8,7 @@ import com.PapoteCar.PapoteCar.model.Utilisateur;
 import com.PapoteCar.PapoteCar.repository.TrajetRepository;
 import com.PapoteCar.PapoteCar.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
@@ -51,6 +53,7 @@ public class UtilisateurController {
         Utilisateur connecte = utilisateurConnecte();
         connecte.setPermisDeConduire(true);
         utilisateurRepository.save(connecte);
+        log.info("Permis de conduire validé pour utilisateur id={}", connecte.getId());
         return ResponseEntity.ok(new UtilisateurResponse(
                 connecte.getId(),
                 connecte.getNom(),
@@ -93,6 +96,7 @@ public class UtilisateurController {
 
         Utilisateur connecte = utilisateurConnecte();
         if (!connecte.getId().equals(id)) {
+            log.warn("Accès interdit : utilisateur id={} tente de modifier le profil id={}", connecte.getId(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -101,6 +105,7 @@ public class UtilisateurController {
         if (request.getTel() != null) connecte.setTel(request.getTel());
 
         utilisateurRepository.save(connecte);
+        log.info("Profil mis à jour pour utilisateur id={}", connecte.getId());
 
         return ResponseEntity.ok(new UtilisateurResponse(
                 connecte.getId(),
@@ -137,17 +142,20 @@ public class UtilisateurController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUtilisateur(@PathVariable Integer id) {
+    public ResponseEntity<?> deleteUtilisateur(@PathVariable Integer id) {
         Utilisateur connecte = utilisateurConnecte();
         if (!connecte.getId().equals(id)) {
+            log.warn("Accès interdit : utilisateur id={} tente de supprimer le compte id={}", connecte.getId(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         if (trajetRepository.existsByConducteurIdAndStatut(id, Trajet.Statut.actif)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            log.warn("Conflit suppression compte id={} : trajet actif en cours", id);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Impossible de supprimer votre compte : vous avez un trajet actif en cours");
         }
 
         utilisateurRepository.deleteById(id);
+        log.info("Compte supprimé id={}", id);
         return ResponseEntity.noContent().build();
     }
 
@@ -158,6 +166,7 @@ public class UtilisateurController {
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<String> handleIllegalState(IllegalStateException ex) {
+        log.error("Erreur inattendue dans UtilisateurController : {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
     }
 

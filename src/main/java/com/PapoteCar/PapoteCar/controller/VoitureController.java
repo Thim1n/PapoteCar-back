@@ -10,6 +10,7 @@ import com.PapoteCar.PapoteCar.repository.TrajetRepository;
 import com.PapoteCar.PapoteCar.repository.UtilisateurRepository;
 import com.PapoteCar.PapoteCar.repository.VoitureRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class VoitureController {
@@ -50,6 +52,7 @@ public class VoitureController {
 
         Utilisateur connecte = utilisateurConnecte();
         if (!voitureRepository.existsByIdAndUtilisateurId(id, connecte.getId())) {
+            log.warn("Accès interdit : utilisateur id={} tente d'accéder à la voiture id={}", connecte.getId(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -76,6 +79,7 @@ public class VoitureController {
         voiture.setTailleCoffre(request.getTailleCoffre());
 
         Voiture sauvegardee = voitureRepository.save(voiture);
+        log.info("Voiture créée id={} pour utilisateur id={}", sauvegardee.getId(), connecte.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new VoitureResponse(sauvegardee.getId(), sauvegardee.getModele(), sauvegardee.getNbPassagers(), sauvegardee.getCouleur(), sauvegardee.getTailleCoffre()));
@@ -92,11 +96,13 @@ public class VoitureController {
 
         Utilisateur connecte = utilisateurConnecte();
         if (!voitureRepository.existsByIdAndUtilisateurId(id, connecte.getId())) {
+            log.warn("Accès interdit : utilisateur id={} ne possède pas la voiture id={}", connecte.getId(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         if (trajetRepository.existsByVoitureIdAndStatut(id, Trajet.Statut.actif)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            log.warn("Conflit modification voiture id={} : trajet actif en cours", id);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Impossible de modifier cette voiture : un trajet actif l'utilise actuellement");
         }
 
         if (request.getModele() != null && request.getModele().isBlank()) {
@@ -112,26 +118,30 @@ public class VoitureController {
         if (request.getTailleCoffre() != null) voiture.setTailleCoffre(request.getTailleCoffre());
 
         voitureRepository.save(voiture);
+        log.info("Voiture mise à jour id={} par utilisateur id={}", id, connecte.getId());
 
         return ResponseEntity.ok(new VoitureResponse(voiture.getId(), voiture.getModele(), voiture.getNbPassagers(), voiture.getCouleur(), voiture.getTailleCoffre()));
     }
 
     // DELETE /voiture/{id} — supprimer une voiture (ownership + guard trajet actif)
     @DeleteMapping("/voiture/{id}")
-    public ResponseEntity<Void> deleteVoiture(@PathVariable Integer id) {
+    public ResponseEntity<?> deleteVoiture(@PathVariable Integer id) {
         voitureRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Voiture introuvable"));
 
         Utilisateur connecte = utilisateurConnecte();
         if (!voitureRepository.existsByIdAndUtilisateurId(id, connecte.getId())) {
+            log.warn("Accès interdit : utilisateur id={} ne possède pas la voiture id={}", connecte.getId(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         if (trajetRepository.existsByVoitureIdAndStatut(id, Trajet.Statut.actif)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            log.warn("Conflit suppression voiture id={} : trajet actif en cours", id);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Impossible de supprimer cette voiture : un trajet actif l'utilise actuellement");
         }
 
         voitureRepository.deleteById(id);
+        log.info("Voiture supprimée id={} par utilisateur id={}", id, connecte.getId());
         return ResponseEntity.noContent().build();
     }
 
@@ -142,6 +152,7 @@ public class VoitureController {
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<String> handleIllegalState(IllegalStateException ex) {
+        log.error("Erreur inattendue dans VoitureController : {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
     }
 }
