@@ -1,0 +1,60 @@
+# =============================================================
+# PapoteCar - Docker Compose PRODUCTION
+# Utilise les images pré-buildées depuis ghcr.io
+# Usage : docker compose -f docker-compose.prod.yml up -d
+# =============================================================
+
+services:
+
+  papotecar-db:
+    image: ghcr.io/thim1n/papotecar-back/mysql:latest
+    container_name: papotecar-db
+    restart: unless-stopped
+
+    environment:
+      MYSQL_DATABASE:      papotecar
+      MYSQL_USER:          papotecar_user
+      MYSQL_PASSWORD:      papotecar_pass
+      MYSQL_ROOT_PASSWORD: root_secret
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - papotecar-db-data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
+             "-u", "papotecar_user", "--password=papotecar_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    networks:
+      - papotecar-network
+
+  papotecar-back:
+    image: ghcr.io/thim1n/papotecar-back/app:latest
+    container_name: papotecar-back
+    depends_on:
+      papotecar-db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://papotecar-db:3306/papotecar?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Europe/Paris&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: papotecar_user
+      SPRING_DATASOURCE_PASSWORD: papotecar_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "8080:8080"
+    networks:
+      - papotecar-network
+
+volumes:
+  papotecar-db-data:
+    driver: local
+
+networks:
+  papotecar-network:
+    driver: bridge

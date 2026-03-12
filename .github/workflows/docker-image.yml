@@ -35,7 +35,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push app image
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -43,5 +43,17 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ghcr.io/${{ steps.set-image.outputs.image_repo }}:latest
-            ghcr.io/${{ steps.set-image.outputs.image_repo }}:${{ github.sha }}
+            ghcr.io/${{ steps.set-image.outputs.image_repo }}/app:latest
+            ghcr.io/${{ steps.set-image.outputs.image_repo }}/app:${{ github.sha }}
+
+      - name: Build and push mysql image
+        uses: docker/build-push-action@v4
+        with:
+          context: docker/mysql
+          file: docker/mysql/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/${{ steps.set-image.outputs.image_repo }}/mysql:latest
+            ghcr.io/${{ steps.set-image.outputs.image_repo }}/mysql:${{ github.sha }}
+

@@ -1,4 +1,6 @@
 HELP.md
+.env
+docker/.env
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
