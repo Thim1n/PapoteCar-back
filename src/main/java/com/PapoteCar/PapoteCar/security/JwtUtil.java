@@ -1,6 +1,5 @@
 package com.PapoteCar.PapoteCar.security;
 
-import com.PapoteCar.PapoteCar.dto.AuthResponse;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +21,7 @@ import java.util.Set;
 public class JwtUtil {
 
     private final SecretKey secretKey;
-    private final Set<String> balcklist = new HashSet<>();
+    private final Set<String> blacklist = new HashSet<>();
 
     public JwtUtil(@Value("${jwt.secret}") String secret) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
@@ -56,7 +55,7 @@ public class JwtUtil {
     // ─── Validation ──────────────────────────────────────────────────────────
 
     public boolean isTokenValid(String token) {
-        if (balcklist.contains(token)) return false;
+        if (blacklist.contains(token)) return false;
         try {
             parseClaims(token);
             return true;
@@ -66,7 +65,7 @@ public class JwtUtil {
     }
 
     public void revokeToken(String token) {
-        balcklist.add(token);
+        blacklist.add(token);
     }
 
     // ─── Privé ───────────────────────────────────────────────────────────────

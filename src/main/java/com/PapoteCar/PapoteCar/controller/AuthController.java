@@ -37,8 +37,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader("Authorization") String token) {
-        if(!jwtUtil.isTokenValid(token)) {
+    public ResponseEntity<String> logout(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body("Token invalide");
+        }
+        String token = authHeader.substring(7);
+        if (!jwtUtil.isTokenValid(token)) {
             return ResponseEntity.status(401).body("Token invalide");
         }
         jwtUtil.revokeToken(token);
