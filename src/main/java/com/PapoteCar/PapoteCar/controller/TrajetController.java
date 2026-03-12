@@ -190,8 +190,19 @@ public class TrajetController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        if (request.getHoraireDepart() == null || request.getHoraireArrivee() == null
-                || !request.getHoraireDepart().isBefore(request.getHoraireArrivee())) {
+        if (request.getHoraireDepart() == null) {
+            return ResponseEntity.badRequest().body("L'horaire de depart est obligatoire");
+        }
+
+        LocalDateTime horaireArrivee = request.getHoraireArrivee();
+        if (horaireArrivee == null) {
+            if (request.getTempsTrajetMin() == null) {
+                return ResponseEntity.badRequest().body("Fournir l'horaire d'arrivee ou le temps de trajet estimé");
+            }
+            horaireArrivee = request.getHoraireDepart().plusMinutes(request.getTempsTrajetMin());
+        }
+
+        if (!request.getHoraireDepart().isBefore(horaireArrivee)) {
             return ResponseEntity.badRequest().body("L'horaire de depart doit etre avant l'horaire d'arrivee");
         }
 
@@ -215,7 +226,7 @@ public class TrajetController {
         trajet.setArriveeLatitude(request.getArriveeLatitude());
         trajet.setArriveeLongitude(request.getArriveeLongitude());
         trajet.setHoraireDepart(request.getHoraireDepart());
-        trajet.setHoraireArrivee(request.getHoraireArrivee());
+        trajet.setHoraireArrivee(horaireArrivee);
         trajet.setTempsTrajetMin(request.getTempsTrajetMin());
         trajet.setPlacesDisponibles(request.getPlacesDisponibles());
         trajet.setStatut(Trajet.Statut.actif);
