@@ -1,9 +1,6 @@
 package com.PapoteCar.PapoteCar.service;
 
-import com.PapoteCar.PapoteCar.dto.AuthResponse;
-import com.PapoteCar.PapoteCar.dto.LoginRequest;
-import com.PapoteCar.PapoteCar.dto.RegisterRequest;
-import com.PapoteCar.PapoteCar.dto.ForgotPasswordRequest;
+import com.PapoteCar.PapoteCar.dto.*;
 import com.PapoteCar.PapoteCar.model.Utilisateur;
 import com.PapoteCar.PapoteCar.repository.UtilisateurRepository;
 import com.PapoteCar.PapoteCar.security.JwtUtil;
@@ -81,6 +78,19 @@ public class AuthService {
 
         utilisateur.setMotDePasse(passwordEncoder.encode(request.getNewPassword()));
 
+        utilisateurRepository.save(utilisateur);
+    }
+
+    public void resetPassword(ResetPasswordRequest request) {
+
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), utilisateur.getMotDePasse())) {
+            throw new IllegalArgumentException("Ancien mot de passe incorrect");
+        }
+
+        utilisateur.setMotDePasse(passwordEncoder.encode(request.getNewPassword()));
         utilisateurRepository.save(utilisateur);
     }
 

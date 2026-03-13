@@ -1,9 +1,6 @@
 package com.PapoteCar.PapoteCar.controller;
 
-import com.PapoteCar.PapoteCar.dto.AuthResponse;
-import com.PapoteCar.PapoteCar.dto.LoginRequest;
-import com.PapoteCar.PapoteCar.dto.RegisterRequest;
-import com.PapoteCar.PapoteCar.dto.ForgotPasswordRequest;
+import com.PapoteCar.PapoteCar.dto.*;
 import com.PapoteCar.PapoteCar.security.JwtUtil;
 import com.PapoteCar.PapoteCar.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -94,6 +91,12 @@ public class AuthController {
     public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         authService.forgotPassword(request);
         return ResponseEntity.ok("Mot de passe modifié avec succès");
+    }
+
+    @PatchMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok("Mot de passe réinitialisé avec succès");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
