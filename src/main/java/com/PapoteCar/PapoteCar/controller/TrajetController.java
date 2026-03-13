@@ -481,10 +481,17 @@ public class TrajetController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Ce trajet est déjà " + trajet.getStatut() + " et ne peut pas être annulé");
         }
 
+        List<Reservation> reservations = reservationRepository.findByTrajetId(id);
+
+        boolean aDesReservationsValides = reservations.stream()
+                .anyMatch(r -> r.getStatut() == Reservation.Statut.valide);
+        if (aDesReservationsValides) {
+            log.warn("Conflit annulation trajet id={} : réservations validées présentes", id);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Impossible d'annuler ce trajet : des réservations ont déjà été validées");
+        }
+
         trajet.setStatut(Trajet.Statut.annule);
         trajetRepository.save(trajet);
-
-        List<Reservation> reservations = reservationRepository.findByTrajetId(id);
         for (Reservation reservation : reservations) {
             reservation.setStatut(Reservation.Statut.annule);
         }
