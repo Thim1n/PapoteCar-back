@@ -557,6 +557,31 @@ public class TrajetController {
         ));
     }
 
+    @GetMapping("/trajets/mes-reservations")
+    public ResponseEntity<List<TrajetResponse>> getMesTrajetsReserves() {
+        Utilisateur connecte = utilisateurConnecte();
+
+        List<TrajetResponse> trajets = reservationRepository.findByPassagerId(connecte.getId())
+                .stream()
+                .map(reservation -> {
+                    Trajet trajet = reservation.getTrajet();
+                    return new TrajetResponse(
+                            trajet.getId(),
+                            trajet.getDepartVille(),
+                            trajet.getArriveeVille(),
+                            trajet.getHoraireDepart(),
+                            trajet.getHoraireArrivee(),
+                            trajet.getPlacesDisponibles(),
+                            trajet.getPrix(),
+                            trajet.getStatut(),
+                            trajet.getCreatedAt()
+                    );
+                })
+                .toList();
+
+        return ResponseEntity.ok(trajets);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());

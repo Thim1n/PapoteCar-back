@@ -1,73 +1,50 @@
-# PapoteCar — Backend
+# PapoteCar — Base de données MySQL
 
-API REST Spring Boot pour l'application de covoiturage PapoteCar.
-
-## Lancement rapide avec les images pré-buildées
-
-Les images Docker sont publiées automatiquement sur GitHub Container Registry à chaque push sur `master`.
-Le `JWT_SECRET` est intégré dans l'image au moment du build — aucune configuration requise.
-
-### Prérequis
-
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-
-### Démarrage
-
-```bash
-# 1. Cloner le dépôt
-git clone https://github.com/Thim1n/PapoteCar-back.git
-cd PapoteCar-back
-
-# 2. Télécharger les images et démarrer
-docker compose pull
-docker compose up -d
-```
-
-Docker télécharge automatiquement les images depuis `ghcr.io/thim1n/papotecar-back` et démarre les conteneurs.
-
-> La première fois, MySQL initialise la base et injecte les données (~20 secondes).
-> Vérifier que tout est prêt : `docker compose ps`
-
-L'API est disponible sur `http://localhost:8080`.
-
-### Arrêt
-
-```bash
-# Arrêter (conserve les données)
-docker compose down
-
-# Reset complet (supprime les données)
-docker compose down -v
-```
-
----
-
-## Lancement en développement (build local)
-
-Pour contribuer au projet et builder les images en local :
-
-```bash
-# Démarrer MySQL uniquement
-cd docker && docker compose up -d
-
-# Lancer l'application Spring Boot
-./mvnw spring-boot:run
-```
+Contient la configuration Docker pour la base de données MySQL du projet PapoteCar.
 
 ## Structure
 
 ```
-docker-compose.yml            ← images ghcr.io (usage standard)
 docker/
-├── docker-compose.yml        ← développement (build local)
-├── app/
-│   └── Dockerfile
+├── docker-compose.yml
+├── application.properties   ← à copier dans src/main/resources/
 └── mysql/
     ├── Dockerfile
     └── initdb/
         ├── 00_charset.sql   # Configuration UTF-8
         ├── 01_schema.sql    # Création des tables
         └── 02_data.sql      # Données de test
+```
+
+## Démarrage
+
+Depuis le dossier `docker/` :
+
+
+
+
+```bash
+# Construire l'image et démarrer la base de données
+docker compose up -d --build
+```
+
+> La première fois, MySQL initialise la base et injecte les données (~20 secondes).
+> Vérifier que le statut est `healthy` : `docker compose ps`
+
+## Commandes utiles
+
+```bash
+# Démarrer (sans rebuild)
+docker compose up -d
+
+# Arrêter (conserve les données)
+docker compose down
+
+# Arrêter et supprimer toutes les données (reset complet)
+docker compose down -v
+
+# Rebuild complet + redémarrage (après modification des scripts SQL)
+docker compose down -v && docker compose up -d --build
 ```
 
 ## Vérification des données
