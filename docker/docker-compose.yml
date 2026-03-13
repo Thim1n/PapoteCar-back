@@ -59,6 +59,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       LOGGING_LEVEL_COM_PAPOTECAR_PAPOTECAR_SECURITY: DEBUG
       LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+      JWT_SECRET: ${JWT_SECRET:-changeme-default-secret-to-override}
     ports:
       - "8080:8080"
     networks:

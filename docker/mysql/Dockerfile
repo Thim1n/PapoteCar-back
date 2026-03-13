@@ -8,5 +8,4 @@ ENV MYSQL_DATABASE=papotecar \
 
 COPY initdb/ /docker-entrypoint-initdb.d/
 
-# Port MySQL standard
 EXPOSE 3306
