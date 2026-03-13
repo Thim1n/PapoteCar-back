@@ -3,6 +3,7 @@ package com.PapoteCar.PapoteCar.controller;
 import com.PapoteCar.PapoteCar.dto.AuthResponse;
 import com.PapoteCar.PapoteCar.dto.LoginRequest;
 import com.PapoteCar.PapoteCar.dto.RegisterRequest;
+import com.PapoteCar.PapoteCar.dto.ForgotPasswordRequest;
 import com.PapoteCar.PapoteCar.security.JwtUtil;
 import com.PapoteCar.PapoteCar.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -86,6 +88,12 @@ public class AuthController {
         }
         jwtUtil.revokeToken(token);
         return ResponseEntity.ok("Déconnecté avec succès");
+    }
+
+    @PatchMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok("Mot de passe modifié avec succès");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

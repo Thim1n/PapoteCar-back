@@ -3,6 +3,7 @@ package com.PapoteCar.PapoteCar.service;
 import com.PapoteCar.PapoteCar.dto.AuthResponse;
 import com.PapoteCar.PapoteCar.dto.LoginRequest;
 import com.PapoteCar.PapoteCar.dto.RegisterRequest;
+import com.PapoteCar.PapoteCar.dto.ForgotPasswordRequest;
 import com.PapoteCar.PapoteCar.model.Utilisateur;
 import com.PapoteCar.PapoteCar.repository.UtilisateurRepository;
 import com.PapoteCar.PapoteCar.security.JwtUtil;
@@ -71,6 +72,16 @@ public class AuthService {
         String token = jwtUtil.generateToken(utilisateur.getEmail());
         log.info("Connexion réussie pour : {}", login);
         return new AuthResponse(token, expireLabel());
+    }
+
+    public void forgotPassword(ForgotPasswordRequest request) {
+
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+
+        utilisateur.setMotDePasse(passwordEncoder.encode(request.getNewPassword()));
+
+        utilisateurRepository.save(utilisateur);
     }
 
 
